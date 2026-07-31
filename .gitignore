@@ -13,3 +13,6 @@ CLAUDE.local.md
 plan.md
 memory/
 .claude/
+
+# Copiados de README.md e CHANGELOG.md pelo workflow de docs; versionados
+# para que `mkdocs serve` funcione sem passo previo.

@@ -184,6 +184,34 @@ documentation are in English.
 * <https://docs.api.transferegov.gestao.gov.br/fundoafundo/>
 * <https://docs.api.transferegov.gestao.gov.br/ted/>
 
+## Releasing
+
+Publication uses [Trusted Publishing](https://docs.pypi.org/trusted-publishers/),
+so no API token is stored anywhere. Register the publisher once on PyPI, under
+*Your projects → transferegovpy → Publishing*, or as a pending publisher before
+the first upload:
+
+| Field | Value |
+|---|---|
+| PyPI Project Name | `transferegovpy` |
+| Owner | `StrategicProjects` |
+| Repository name | `transferegovpy` |
+| Workflow name | `publish.yaml` |
+| Environment name | `pypi` |
+
+The same on [test.pypi.org](https://test.pypi.org), with environment name
+`testpypi`.
+
+Then:
+
+```bash
+# a dry run to TestPyPI
+gh workflow run publish.yaml -f target=testpypi
+
+# the real thing
+gh release create v0.1.0 --title "transferegovpy 0.1.0" --notes-file CHANGELOG.md
+```
+
 ## License
 
 MIT
