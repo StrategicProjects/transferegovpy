@@ -1,0 +1,15 @@
+__pycache__/
+*.py[cod]
+.venv/
+.pytest_cache/
+.ruff_cache/
+dist/
+build/
+*.egg-info/
+site/
+.DS_Store
+CLAUDE.md
+CLAUDE.local.md
+plan.md
+memory/
+.claude/

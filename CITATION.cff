@@ -1,0 +1,43 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it as below."
+title: "transferegovpy: Access the TransfereGov open data APIs from Python"
+abstract: >-
+  A Python client for the three open data APIs of TransfereGov, the Brazilian
+  federal government's platform for transfers to states, municipalities and
+  civil society: special transfers, fund-to-fund transfers and decentralized
+  credit. Returns typed pandas DataFrames, with pagination, throttling, retries
+  and an optional response cache.
+type: software
+version: 0.1.0
+license: MIT
+repository-code: "https://github.com/StrategicProjects/transferegovpy"
+url: "https://strategicprojects.github.io/transferegovpy/"
+keywords:
+  - TransfereGov
+  - Brazil
+  - public finance
+  - open data
+  - PostgREST
+authors:
+  - family-names: Leite
+    given-names: André
+    email: leite@castlab.org
+    orcid: "https://orcid.org/0000-0002-4718-9766"
+  - family-names: Vasconcelos
+    given-names: Hugo
+    email: hugo.vasconcelos@ufpe.br
+    orcid: "https://orcid.org/0000-0001-6249-0920"
+  - family-names: Bezerra
+    given-names: Diogo
+    email: diogo.bezerra@ufpe.br
+    orcid: "https://orcid.org/0000-0002-1216-8674"
+  - family-names: Wasiliew
+    given-names: Marcos
+    email: marcos.wasilew@gmail.com
+  - family-names: Amorim
+    given-names: Carlos
+    email: carlos.agaf@ufpe.br
+    orcid: "https://orcid.org/0000-0001-6315-8305"
+  - family-names: Nascimento Barreto
+    given-names: Júlia
+    email: juliabarreto@gd.seplag.pe.gov.br
