@@ -199,8 +199,9 @@ the first upload:
 | Workflow name | `publish.yaml` |
 | Environment name | `pypi` |
 
-The same on [test.pypi.org](https://test.pypi.org), with environment name
-`testpypi`.
+The same on [test.pypi.org](https://test.pypi.org), which is a separate service
+with its own account and its own publisher registration. The environment name
+is arbitrary and only has to match the workflow, so `pypi` works there too.
 
 Then:
 

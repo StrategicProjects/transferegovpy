@@ -42,8 +42,12 @@ jobs:
     needs: build
     if: github.event_name == 'workflow_dispatch' && inputs.target == 'testpypi'
     runs-on: ubuntu-latest
+    # The environment name is arbitrary; it only has to match the publisher
+    # registered on the index. Both jobs use `pypi` because that is what is
+    # registered. The registrations themselves are still separate: PyPI and
+    # TestPyPI are different services.
     environment:
-      name: testpypi
+      name: pypi
       url: https://test.pypi.org/p/transferegovpy
     permissions:
       id-token: write
