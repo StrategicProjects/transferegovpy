@@ -3,6 +3,7 @@
 [![PyPI](https://img.shields.io/pypi/v/transferegovpy.svg)](https://pypi.org/project/transferegovpy/)
 [![Python](https://img.shields.io/pypi/pyversions/transferegovpy.svg)](https://pypi.org/project/transferegovpy/)
 [![License: MIT](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.21729827.svg)](https://doi.org/10.5281/zenodo.21729827)
 
 Access the open data APIs of **TransfereGov**, the Brazilian federal
 government's platform for transfers to states, municipalities and civil
@@ -183,6 +184,23 @@ documentation are in English.
 * <https://docs.api.transferegov.gestao.gov.br/transferenciasespeciais/>
 * <https://docs.api.transferegov.gestao.gov.br/fundoafundo/>
 * <https://docs.api.transferegov.gestao.gov.br/ted/>
+
+## Citation
+
+Each release is archived on Zenodo. The DOI above is the *concept* DOI: it
+always resolves to the latest version. To cite the exact version you used,
+take its own DOI from the [Zenodo record](https://doi.org/10.5281/zenodo.21729827).
+
+```bibtex
+@software{transferegovpy,
+  title   = {transferegovpy: Access the TransfereGov open data APIs from Python},
+  author  = {Leite, André and Vasconcelos, Hugo and Bezerra, Diogo and
+             Wasiliew, Marcos and Amorim, Carlos and Nascimento Barreto, Júlia},
+  year    = {2026},
+  doi     = {10.5281/zenodo.21729827},
+  url     = {https://github.com/StrategicProjects/transferegovpy}
+}
+```
 
 ## Releasing
 

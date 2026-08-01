@@ -10,6 +10,14 @@ abstract: >-
 type: software
 version: 0.1.0
 license: MIT
+doi: "10.5281/zenodo.21729827"
+identifiers:
+  - type: doi
+    value: "10.5281/zenodo.21729827"
+    description: The concept DOI, which always resolves to the latest version.
+  - type: doi
+    value: "10.5281/zenodo.21729828"
+    description: The DOI of version 0.1.0.
 repository-code: "https://github.com/StrategicProjects/transferegovpy"
 url: "https://strategicprojects.github.io/transferegovpy/"
 keywords:
