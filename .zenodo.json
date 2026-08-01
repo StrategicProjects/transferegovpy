@@ -1,0 +1,72 @@
+{
+  "title": "transferegovpy: Access the TransfereGov open data APIs from Python",
+  "description": "<p>A Python client for the three open data APIs of TransfereGov, the Brazilian federal government's platform for transfers to states, municipalities and civil society: special transfers (<em>transferências especiais</em>), fund-to-fund transfers (<em>fundo a fundo</em>) and decentralized credit (<em>termo de execução descentralizada</em>). Together they publish forty-eight tables on action plans, programmes, budget commitments, financial execution, management reports and payment orders.</p><p>All three are PostgREST services, so the package exposes their filtering, column selection and ordering directly rather than wrapping each table in a function of its own. Results are returned as pandas DataFrames typed from the APIs' own OpenAPI schema, which is frozen into the package so that validation and typing work offline. Pagination is bounded by the service's silent 1000-row cap and carries an explicit ordering, so pages cannot overlap or skip rows; the number of rows collected is checked against the total the API reports. Requests are throttled and retried with exponential backoff, and responses are cached.</p><p>This is the Python sibling of transferegovr, which covers the same APIs from R with the same semantics.</p>",
+  "upload_type": "software",
+  "access_right": "open",
+  "license": "mit",
+  "language": "eng",
+  "version": "0.1.0",
+  "keywords": [
+    "TransfereGov",
+    "Brazil",
+    "public finance",
+    "parliamentary amendments",
+    "intergovernmental transfers",
+    "open data",
+    "open government",
+    "PostgREST",
+    "Python",
+    "pandas"
+  ],
+  "creators": [
+    {
+      "name": "Leite, André",
+      "affiliation": "Universidade Federal de Pernambuco",
+      "orcid": "0000-0002-4718-9766"
+    },
+    {
+      "name": "Vasconcelos, Hugo",
+      "affiliation": "Universidade Federal de Pernambuco",
+      "orcid": "0000-0001-6249-0920"
+    },
+    {
+      "name": "Bezerra, Diogo",
+      "affiliation": "Universidade Federal de Pernambuco",
+      "orcid": "0000-0002-1216-8674"
+    },
+    {
+      "name": "Wasiliew, Marcos"
+    },
+    {
+      "name": "Amorim, Carlos",
+      "affiliation": "Universidade Federal de Pernambuco",
+      "orcid": "0000-0001-6315-8305"
+    },
+    {
+      "name": "Nascimento Barreto, Júlia",
+      "affiliation": "Secretaria de Planejamento e Gestão de Pernambuco"
+    }
+  ],
+  "related_identifiers": [
+    {
+      "identifier": "https://github.com/StrategicProjects/transferegovpy",
+      "relation": "isSupplementTo",
+      "scheme": "url"
+    },
+    {
+      "identifier": "https://strategicprojects.github.io/transferegovpy/",
+      "relation": "isDocumentedBy",
+      "scheme": "url"
+    },
+    {
+      "identifier": "https://github.com/StrategicProjects/transferegovr",
+      "relation": "isCompiledBy",
+      "scheme": "url"
+    },
+    {
+      "identifier": "https://www.gov.br/transferegov/pt-br/ferramentas-gestao/dados-abertos",
+      "relation": "references",
+      "scheme": "url"
+    }
+  ]
+}
