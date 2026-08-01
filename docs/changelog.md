@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.1.1
+
+* The PyPI project page showed the full text of the MIT license where the
+  license name belongs, because the metadata pointed at the file rather than
+  naming the license. `pyproject.toml` now declares the SPDX expression
+  (PEP 639), so the page reads "MIT".
+* Recorded the Zenodo DOI: 10.5281/zenodo.21729827 for the project, with a
+  DOI of its own for each version.
+
 ## 0.1.0
 
 First release.

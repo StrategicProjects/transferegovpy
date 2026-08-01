@@ -8,7 +8,7 @@ abstract: >-
   credit. Returns typed pandas DataFrames, with pagination, throttling, retries
   and an optional response cache.
 type: software
-version: 0.1.0
+version: 0.1.1
 license: MIT
 doi: "10.5281/zenodo.21729827"
 identifiers:

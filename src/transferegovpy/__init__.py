@@ -23,7 +23,7 @@ they belong to the API.
 
 from __future__ import annotations
 
-__version__ = "0.1.0"
+__version__ = "0.1.1"
 
 from ._cache import cache_clear, cache_dir
 from ._cache import enabled as cache_enabled
