@@ -1,9 +1,14 @@
 """Access to the frozen OpenAPI schema.
 
 ``_schema.json`` is built by ``scripts/build_schema.py`` from the documents the
-three APIs publish at their roots. Freezing it means filter validation, column
-typing and :func:`~transferegovpy.fields` work without a network connection,
-and that a change upstream shows up as a reviewable diff.
+three APIs publish. Freezing it means filter validation, column typing and
+:func:`~transferegovpy.fields` work without a network connection, and that a
+change upstream shows up as a reviewable diff.
+
+It holds the accepted **query parameters** as well as the columns. That is not
+symmetry for its own sake: these services ignore a parameter they do not
+recognise and answer 200 with the whole table, so the frozen list is the only
+thing standing between a typo and a plausible, unfiltered answer.
 """
 
 from __future__ import annotations
@@ -33,12 +38,26 @@ def default_base_url() -> str:
     return bundle()["base_url"]
 
 
+def max_page() -> int:
+    """Rows per request the services cap at. Asking for more is a 422."""
+    return int(bundle()["max_page"])
+
+
 def module_names() -> list[str]:
     return list(bundle()["modules"])
 
 
 def label(module: str) -> str:
     return bundle()["labels"][module]
+
+
+def module_base_url(module: str) -> str:
+    return bundle()["modules"][module]["base_url"]
+
+
+def timestamp_path(module: str) -> str:
+    """The endpoint reporting when a module's data was last loaded."""
+    return bundle()["modules"][module]["timestamp_path"]
 
 
 def match_module(module: str) -> str:
@@ -64,11 +83,15 @@ def table_names(module: str) -> list[str]:
 
 
 def match_table(module: str, table: str) -> str:
-    """Resolve a table name within a module."""
+    """Resolve a table name within a module.
+
+    The endpoints are not consistent between modules about ``-`` and ``_``, so
+    both spellings resolve to the underscore form the package exposes.
+    """
     if not isinstance(table, str):
         raise SchemaError(f"table must be a string, not {type(table).__name__}.")
 
-    key = table.strip()
+    key = table.strip().replace("-", "_")
     tables = bundle()["modules"][module]["tables"]
 
     if key not in tables:
@@ -87,51 +110,29 @@ def match_table(module: str, table: str) -> str:
     return key
 
 
+def _table(module: str, table: str) -> dict:
+    return bundle()["modules"][module]["tables"][table]
+
+
 def table_fields(module: str, table: str) -> dict:
-    return bundle()["modules"][module]["tables"][table]["fields"]
+    return _table(module, table)["fields"]
+
+
+def table_params(module: str, table: str) -> dict:
+    """The query parameters an endpoint accepts, keyed by name."""
+    return _table(module, table)["params"]
+
+
+def table_nested(module: str, table: str) -> dict:
+    """The sub-schemas of the table's list columns, keyed by column."""
+    return _table(module, table)["nested"]
+
+
+def table_path(module: str, table: str) -> str:
+    """The endpoint path, which may spell the name with hyphens."""
+    return _table(module, table)["path"]
 
 
 def table_description(module: str, table: str) -> str | None:
-    return bundle()["modules"][module]["tables"][table]["description"]
-
-
-def primary_key(module: str, table: str) -> list[str]:
-    return [c for c, f in table_fields(module, table).items() if f["primary_key"]]
-
-
-def default_order(module: str, table: str) -> list[str]:
-    """The order used for multi-page collection.
-
-    Offset pagination over an unordered query has no defined row order in
-    Postgres, so pages could overlap or skip; an explicit order makes the
-    sequence reproducible. A declared primary key is a total order. Failing
-    that, identifier-like columns are the best available key, and the collected
-    count is still checked afterwards.
-    """
-    keys = primary_key(module, table)
-    if keys:
-        return [f"{k}.asc" for k in keys]
-
-    fields = table_fields(module, table)
-    identifiers = [c for c in fields if re.match(r"^(id|sq|co|nr|cd)_", c)]
-    if identifiers:
-        return [f"{c}.asc" for c in identifiers]
-
-    return [f"{next(iter(fields))}.asc"]
-
-
-def check_columns(module: str, table: str, columns, what: str, validate: bool = True) -> None:
-    """Reject column names the frozen schema does not know."""
-    if not validate or not columns:
-        return
-
-    known = table_fields(module, table)
-    unknown = [c for c in dict.fromkeys(columns) if c not in known]
-
-    if unknown:
-        raise SchemaError(
-            f"Unknown {what} column(s): {', '.join(repr(c) for c in unknown)}. "
-            f"See fields({module!r}, {table!r}) for the columns this table publishes. "
-            f"The packaged schema is from {built_at()}. If the API has gained a column "
-            "since, pass validate=False."
-        )
+    entry = _table(module, table)
+    return entry["description"] or entry["summary"]

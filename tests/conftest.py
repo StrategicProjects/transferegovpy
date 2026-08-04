@@ -15,7 +15,7 @@ import responses as responses_lib
 import transferegovpy as tg
 from transferegovpy import _cache
 
-BASE = "https://api.transferegov.gestao.gov.br"
+BASE = "https://api-publica.transferegov.gestao.gov.br"
 
 
 @pytest.fixture(autouse=True)
@@ -34,59 +34,68 @@ def mock():
         yield rsps
 
 
-def page(n, start=1, total=None, first=None):
-    """One page of ``ted/plano_acao`` rows, with identifiers from ``start``."""
-    rows = [
-        {
-            "id_plano_acao": start + i,
-            "aa_ano_plano_acao": 2024,
-            "vl_total_plano_acao": (start + i) * 10.5,
-            "dt_inicio_vigencia": f"2024-01-0{(i % 9) + 1}",
-            "in_forma_execucao_direta": True,
-            "tx_objeto_plano_acao": f"row {start + i}",
-        }
-        for i in range(n)
-    ]
-
-    first = start - 1 if first is None else first
-    if total is None:
-        content_range = f"{first}-{first + n - 1}/*"
-    else:
-        content_range = f"{first}-{first + n - 1}/{total}"
-
-    return json.dumps(rows), content_range
-
-
-def add_page(mock, n, start=1, total=None, first=None, table="plano_acao", module="ted"):
-    body, content_range = page(n, start, total, first)
-    mock.add(
-        responses_lib.GET,
-        f"{BASE}/{module}/{table}",
-        body=body,
-        status=200,
-        content_type="application/json",
-        headers={"Content-Range": content_range},
+def envelope(data, total=0, page=1, page_size=200, pages=None):
+    """The paginated envelope, around ``data`` given as literal JSON."""
+    if pages is None:
+        pages = -(-total // max(page_size, 1))
+    return (
+        f'{{"data":{data},"total_pages":{pages},"total_items":{total},'
+        f'"page_number":{page},"page_size":{page_size}}}'
     )
 
 
-def add_body(mock, body, status=200, content_range=None, table="plano_acao", module="ted"):
-    headers = {"Content-Range": content_range} if content_range else {}
+def page_body(n, start=1, total=None, page=1, page_size=200):
+    """One page of ``parcerias/parceria`` rows, with ids from ``start``."""
+    rows = [
+        {
+            "id_parceria": start + i,
+            # Beyond 2**31 on purpose: cd_parceria genuinely is.
+            "cd_parceria": 202500000000 + start + i,
+            "id_proposta": start + i,
+            "in_situacao_parceria": "Aprovada",
+            "dh_assinatura": f"2025-01-0{(i % 9) + 1}T12:00:00",
+            "tx_justificativa": None,
+            "publicacoes_parceria": [],
+        }
+        for i in range(n)
+    ]
+    return envelope(
+        json.dumps(rows),
+        total=n if total is None else total,
+        page=page,
+        page_size=page_size,
+    )
+
+
+def add_page(mock, n, start=1, total=None, page=1, page_size=200,
+             table="parceria", module="parcerias"):
+    add_body(
+        mock,
+        page_body(n, start, total, page, page_size),
+        table=table,
+        module=module,
+    )
+
+
+def add_body(mock, body, status=200, table="parceria", module="parcerias"):
     mock.add(
         responses_lib.GET,
         f"{BASE}/{module}/{table}",
         body=body,
         status=status,
         content_type="application/json",
-        headers=headers,
     )
 
 
 def query_of(call):
-    """The query string of a recorded request, as a list of pairs.
-
-    A list rather than a dict because two conditions on one column are two
-    parameters with the same name.
-    """
+    """The query string of a recorded request, as a list of pairs."""
     from urllib.parse import parse_qsl, urlsplit
 
     return parse_qsl(urlsplit(call.request.url).query, keep_blank_values=True)
+
+
+def path_of(call):
+    """The path of a recorded request, without the leading slash."""
+    from urllib.parse import urlsplit
+
+    return urlsplit(call.request.url).path.lstrip("/")

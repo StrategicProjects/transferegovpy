@@ -6,11 +6,13 @@
 
 ::: transferegovpy.count
 
-::: transferegovpy.ted
+::: transferegovpy.updated_at
+
+::: transferegovpy.especiais
 
 ::: transferegovpy.fundo_a_fundo
 
-::: transferegovpy.transferencias_especiais
+::: transferegovpy.parcerias
 
 ::: transferegovpy.metadata
 
@@ -22,29 +24,9 @@
 
 ::: transferegovpy.fields
 
+::: transferegovpy.params
+
 ::: transferegovpy.schema_date
-
-## Filters
-
-::: transferegovpy.filters
-    options:
-      members:
-        - eq
-        - neq
-        - gt
-        - gte
-        - lt
-        - lte
-        - like
-        - ilike
-        - re_match
-        - re_imatch
-        - in_
-        - is_null
-        - is_true
-        - is_false
-        - not_
-        - operators
 
 ## Configuration
 

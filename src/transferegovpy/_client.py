@@ -1,9 +1,13 @@
-"""HTTP transport: throttling, retries, error reporting and pagination state."""
+"""HTTP transport: throttling, retries, error reporting and pagination state.
+
+The three modules are FastAPI services. A table query is a GET on the endpoint,
+filters are typed query parameters, and the answer is an envelope carrying the
+rows under ``data`` alongside the pagination state.
+"""
 
 from __future__ import annotations
 
 import random
-import re
 import threading
 import time
 from collections.abc import Sequence
@@ -15,15 +19,20 @@ from ._errors import HTTPError, ResponseError, URLTooLongError
 
 __version_header__ = "transferegovpy"
 
-# A filter built with `in_()` over a few thousand identifiers produces a URL the
-# service cannot accept, and the failure it produces is not readable: curl
-# reports "Error in the HTTP2 framing layer", which says nothing about the
-# query. Failing before the request names the cause instead.
+# A very long filter value produces a URL the service cannot accept, and the
+# failure it produces is not readable: curl reports "Error in the HTTP2 framing
+# layer", which says nothing about the query. Failing before the request names
+# the cause instead.
 MAX_URL = 7000
 
-# Only these are worth retrying. A 400 is PostgREST rejecting the query itself
-# and will fail identically every time.
+# Only these are worth retrying. A 422 is the service rejecting the query
+# itself and will fail identically every time.
 TRANSIENT = frozenset({429, 500, 502, 503, 504})
+
+# The envelope every table endpoint answers with. ``total_items`` is what
+# bounds multi-page collection, and its absence has to be an error rather than
+# a silent switch to unbounded paging.
+ENVELOPE = ("data", "total_pages", "total_items", "page_number", "page_size")
 
 _config = {
     "base_url": None,
@@ -49,8 +58,12 @@ def configure(**options) -> dict:
     return dict(_config)
 
 
-def base_url() -> str:
-    return _config["base_url"] or _schema.default_base_url()
+def base_url(module: str | None = None) -> str:
+    if _config["base_url"]:
+        return _config["base_url"]
+    if module is None:
+        return _schema.default_base_url()
+    return _schema.module_base_url(module)
 
 
 def validate() -> bool:
@@ -88,53 +101,64 @@ def _wait_turn() -> None:
         _last_request[0] = time.monotonic()
 
 
-def build_url(module: str, table: str, url: str) -> str:
-    return f"{url.rstrip('/')}/{module}/{table}"
+def build_url(path: str, url: str) -> str:
+    return f"{url.rstrip('/')}/{path.lstrip('/')}"
 
 
-def fetch(
-    module: str,
-    table: str,
-    params: Sequence[tuple[str, str]],
-    count: bool = False,
-    use_cache: bool | None = None,
-    url: str | None = None,
-) -> dict:
-    """Perform one request and return ``{"rows", "total", "cached"}``."""
-    target = build_url(module, table, url or base_url())
-    prepared = requests.Request("GET", target, params=list(params)).prepare()
+def _prepare(path: str, params: Sequence[tuple[str, str]], url: str) -> str:
+    prepared = requests.Request("GET", build_url(path, url), params=list(params)).prepare()
 
     if len(prepared.url) > MAX_URL:
         raise URLTooLongError(
             f"The request URL is {len(prepared.url)} bytes, over the {MAX_URL} the service "
-            "accepts. A filter built with in_() over a long sequence is the usual cause. "
-            "Split the values into batches of a few hundred and concatenate the results."
+            "accepts. A very long filter value is the usual cause."
         )
 
+    return prepared.url
+
+
+def fetch(
+    path: str,
+    params: Sequence[tuple[str, str]],
+    use_cache: bool | None = None,
+    url: str | None = None,
+) -> dict:
+    """One request, returning ``{"rows", "total", "page", "page_size", "cached"}``."""
+    target = _prepare(path, params, url or base_url())
     wants_cache = _cache.enabled() if use_cache is None else bool(use_cache)
 
     if wants_cache:
-        hit = _cache.read(prepared.url)
+        hit = _cache.read(target)
         if hit is not None:
-            return {"rows": hit["rows"], "total": hit["total"], "cached": True}
+            return {**hit, "cached": True}
 
-    payload = _perform(prepared.url, count=count)
+    payload = _envelope(_perform(target))
 
     if wants_cache:
-        _cache.write(prepared.url, payload)
+        _cache.write(target, payload)
 
-    return {"rows": payload["rows"], "total": payload["total"], "cached": False}
+    return {**payload, "cached": False}
 
 
-def _perform(url: str, count: bool) -> dict:
-    headers = {"Prefer": "count=exact"} if count else {}
+def fetch_object(path: str, url: str | None = None) -> dict:
+    """One request to an endpoint that answers with a bare object.
+
+    ``/data-atualizacao`` is the only such endpoint; it is not paginated.
+    """
+    body = _perform(_prepare(path, (), url or base_url()))
+    if not isinstance(body, dict):
+        raise ResponseError("The TransfereGov API returned an unexpected payload.")
+    return body
+
+
+def _perform(url: str):
     last_error: Exception | None = None
 
     for attempt in range(1, int(_config["max_tries"]) + 1):
         _wait_turn()
 
         try:
-            response = session().get(url, headers=headers, timeout=_config["timeout"])
+            response = session().get(url, timeout=_config["timeout"])
         except requests.RequestException as error:  # connection, DNS, timeout
             last_error = error
             if attempt == _config["max_tries"]:
@@ -149,7 +173,7 @@ def _perform(url: str, count: bool) -> dict:
             continue
 
         _raise_for_status(response)
-        return _payload(response)
+        return _body(response)
 
     raise ResponseError(f"The request to the TransfereGov API failed: {last_error}")
 
@@ -168,59 +192,90 @@ def _raise_for_status(response: requests.Response) -> None:
     if response.status_code < 400:
         return
 
-    # PostgREST reports errors as a JSON object carrying the Postgres SQLSTATE
-    # and message, which name the offending column. Surfacing them turns an
-    # opaque 400 into something the caller can act on.
-    detail: dict = {}
-    try:
-        body = response.json()
-        if isinstance(body, dict):
-            detail = {
-                k: v for k, v in body.items() if k in ("message", "details", "hint", "code") and v
-            }
-    except ValueError:
-        pass
-
+    detail = _details(response)
     message = f"The TransfereGov API returned HTTP {response.status_code} ({response.reason})."
-    for key in ("message", "details", "hint"):
-        if detail.get(key):
-            message += f" {detail[key]}"
-    if response.status_code == 400 and not detail.get("hint"):
-        message += " Check the column names with fields()."
+    for line in detail:
+        message += f" {line}"
+    if response.status_code == 422:
+        message += " Check the parameter names and values with params()."
 
     raise HTTPError(message, status=response.status_code, detail=detail)
 
 
-def _payload(response: requests.Response) -> dict:
+def _details(response: requests.Response) -> list[str]:
+    """FastAPI reports a rejected query under ``detail``.
+
+    That is a list of validation objects for a 422, each naming the offending
+    parameter under ``loc``, and a bare string otherwise.
+    """
     try:
-        rows = response.json()
+        body = response.json()
+    except ValueError:
+        return []
+
+    if not isinstance(body, dict) or "detail" not in body:
+        return []
+
+    detail = body["detail"]
+    if isinstance(detail, str):
+        return [detail] if detail else []
+    if not isinstance(detail, list):
+        return []
+
+    lines = []
+    for item in detail:
+        if not isinstance(item, dict):
+            continue
+        message = item.get("msg")
+        if not isinstance(message, str):
+            continue
+        where = [str(p) for p in item.get("loc", []) if p != "query"]
+        lines.append(f"{'.'.join(where)}: {message}" if where else message)
+    return lines
+
+
+def _body(response: requests.Response):
+    try:
+        return response.json()
     except ValueError as error:
         raise ResponseError(
             "The TransfereGov API returned a body that is not valid JSON."
         ) from error
 
-    if not isinstance(rows, list):
+
+def _envelope(body) -> dict:
+    if not isinstance(body, dict):
         raise ResponseError(
-            "The TransfereGov API returned an unexpected payload; "
-            "a table query must answer with a JSON array of rows."
+            "The TransfereGov API returned an unexpected payload; a table query "
+            "must answer with a paginated envelope."
         )
 
-    return {"rows": rows, "total": parse_content_range(response.headers.get("Content-Range"))}
+    missing = [field for field in ENVELOPE if field not in body]
+    if missing:
+        raise ResponseError(
+            "The TransfereGov API returned an unexpected payload; its response "
+            f"carried no {', '.join(missing)}. A table query must answer with a "
+            "paginated envelope."
+        )
+
+    if not isinstance(body["data"], list):
+        raise ResponseError(
+            "The TransfereGov API returned an unexpected payload; its data field "
+            "must be a JSON array of rows."
+        )
+
+    return {
+        "rows": body["data"],
+        "total": _number(body["total_items"], "total_items"),
+        "page": _number(body["page_number"], "page_number"),
+        "page_size": _number(body["page_size"], "page_size"),
+    }
 
 
-def parse_content_range(header: str | None) -> float | None:
-    """The total from ``Content-Range``.
-
-    The header carries the pagination state: ``0-99/6176`` with an exact count,
-    ``0-99/*`` without one, and ``*/0`` for an empty result. ``None`` means the
-    service did not say.
-    """
-    if not header:
-        return None
-
-    match = re.match(r"^(?:items\s+)?(\*|\d+-\d+)/(\*|\d+)$", header.strip())
-    if not match:
-        return None
-
-    total = match.group(2)
-    return None if total == "*" else float(total)
+def _number(value, field: str) -> float:
+    if isinstance(value, bool) or not isinstance(value, (int, float)):
+        raise ResponseError(
+            f"The TransfereGov API reported no usable {field}; multi-page "
+            "collection has nothing to bound itself with."
+        )
+    return float(value)

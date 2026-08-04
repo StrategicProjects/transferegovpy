@@ -1,9 +1,13 @@
 """JSON to DataFrame.
 
-PostgREST answers with a flat array of objects, one per row, with a JSON
-``null`` wherever the column is NULL. Columns are typed from the frozen schema
-rather than inferred, so a column made entirely of nulls on one page does not
-come back ``object`` while the next page returns it as ``string``.
+The services answer with an array of objects under ``data``, one per row, with
+a JSON ``null`` wherever the column is NULL. Columns are typed from the frozen
+schema rather than inferred, so a column made entirely of nulls on one page
+does not come back ``object`` while the next page returns it as ``string``.
+
+A few columns hold an array of objects rather than a scalar. They stay as
+``object``, holding the lists as they arrived; ``fields(nested=)`` describes
+what is inside.
 """
 
 from __future__ import annotations
@@ -16,10 +20,10 @@ from . import _schema
 from ._errors import ColumnTypeWarning
 
 
-def to_frame(rows: list, module: str, table: str, columns: list[str] | None = None) -> pd.DataFrame:
+def to_frame(rows: list, module: str, table: str) -> pd.DataFrame:
     fields = _schema.table_fields(module, table)
 
-    names = columns or _row_names(rows) or list(fields)
+    names = _row_names(rows) or list(fields)
     frame = pd.DataFrame(rows, columns=names) if rows else pd.DataFrame({n: [] for n in names})
 
     for name in names:
@@ -32,9 +36,8 @@ def to_frame(rows: list, module: str, table: str, columns: list[str] | None = No
 def _row_names(rows: list) -> list[str]:
     """The column set comes from the response, not the schema.
 
-    ``select`` narrows it, and a column added upstream since the schema was
-    frozen must still come through. Every key seen is kept, in the order the
-    first row presents them.
+    A column added upstream since the schema was frozen must still come
+    through. Every key seen is kept, in the order the first row presents them.
     """
     names: dict[str, None] = {}
     for row in rows:
@@ -49,6 +52,11 @@ def _coerce(series: pd.Series, dtype: str | None, name: str) -> pd.Series:
         # rather than dropped, so the package keeps working when the API gains
         # a column.
         return series
+
+    if dtype == "object":
+        # A declared array column: the lists arrived as pandas found them, and
+        # flattening would lose what they hold.
+        return series.astype("object")
 
     if dtype == "datetime64[ns]":
         return _to_datetime(series, name)

@@ -1,208 +1,171 @@
 # Putting the tables back together
 
+Each module is a normalized database served one table at a time. Almost nothing
+useful is answerable from a single table: the money is in one, who received it
+in another, and what it was spent on in a third. This page maps how they fit
+together.
+
 ```python
-import transferegovpy as tg
 import pandas as pd
+import transferegovpy as tg
 ```
 
-Each API is a relational database published one table at a time. Nothing is
-nested and nothing is pre-joined, so an analysis almost always means retrieving
-two or three tables and joining them yourself. This page maps the keys.
+## The APIs do not declare their keys
 
-## The shape of each module
+The OpenAPI documents these services publish describe columns and query
+parameters, and nothing else — no primary keys, no foreign keys. `fields()`
+therefore cannot tell you what joins to what.
 
-Two identifiers do most of the work across all three modules:
+The relationships below come from the data models the government publishes
+alongside the APIs. The convention is regular enough to follow without them: a
+column named `id_x` in table B refers to the row of table X whose own `id_x`
+matches.
 
-* **`id_programa`** — the programme, which is the funding instrument as a whole.
-* **`id_plano_acao`** — the action plan, which is one recipient's share of it.
+## especiais
 
-Everything else hangs off one of those.
-
-### TED
-
-```
-programa ──< plano_acao ──< plano_acao_meta ──< plano_acao_etapa
-    │            ├──< termo_execucao
-    ├──< programa_acao_orcamentaria
-    └──< programa_beneficiario
-                 ├──< nota_credito ──< evento
-                 ├──< programacao_financeira ──< trf
-                 ├──< plano_acao_analise
-                 └──< plano_acao_parecer
-```
-
-`plano_acao_etapa` joins to `plano_acao_meta` on `id_meta`, not directly to the
-plan. `trf` joins to `programacao_financeira` on `id_programacao`, and `evento`
-to `nota_credito` on `id_nota`.
-
-### Fund-to-fund
+Everything hangs off the action plan, `planos_acao_especiais`.
 
 ```
-programa ──< plano_acao ──< plano_acao_meta ──< plano_acao_meta_acao
-    │            ├──< empenho
-    ├──< programa_beneficiario
-    ├──< plano_acao_dado_bancario
-    └──< programa_gestao_agil
-                 ├──< plano_acao_destinacao_recursos
-                 ├──< plano_acao_historico
-                 ├──< termo_adesao ──< termo_adesao_historico
-                 └──< relatorio_gestao ──< relatorio_gestao_acoes
-                                        └──< relatorio_gestao_analise
+programas_especiais ──< planos_acao_especiais >── beneficiarios_especiais
+                              │
+                              ├──< planos_trabalho_especiais
+                              │        ├──< planos_trabalho_analises_especiais
+                              │        ├──< planos_trabalho_historico
+                              │        └──< orgaos_analises_pendentes_especiais
+                              ├──< executores_especiais
+                              │        ├──< meta_especiais
+                              │        └──< finalidade_especiais
+                              ├──< empenhos_especiais
+                              │        └──< documentos_habeis_especiais
+                              │                 └──< ordens_pagamentos_ordens_bancarias_especiais
+                              ├──< planos_acao_historico_especiais
+                              ├──< relatorios_gestao_especiais
+                              └──< relatorios_gestao_novos_especiais
 ```
 
-The financial management tables form a chain of their own:
-`gestao_financeira_lancamentos` joins to
-`gestao_financeira_categorias_despesa` on
-`id_categoria_despesa_gestao_financeira`, and `gestao_financeira_subtransacoes`
-joins to the entries on `id_lancamento_gestao_financeira`.
-
-Three tables across the APIs carry a foreign key with an `_fk` suffix rather
-than an `id_` prefix: `plano_acao_analise_responsavel.plano_acao_analise_fk` and
-`relatorio_gestao_analise_responsavel.relatorio_gestao_analise_fk` here, and
-`plano_acao_parecer.plano_acao_hist_fk` in TED.
-
-### Special transfers
-
-```
-programa_especial ──< plano_acao_especial ──< plano_trabalho_especial
-                              ├──< executor_especial ──< meta_especial
-                              │                      └──< finalidade_especial
-                              ├──< empenho_especial ──< documento_habil_especial
-                              ├──< relatorio_gestao_especial
-                              └──< relatorio_gestao_novo_especial
-```
-
-`documento_habil_especial` leads on to
-`ordem_pagamento_ordem_bancaria_especial` through `id_dh`, and from there to
-`historico_pagamento_especial` through `id_op_ob`. That is the payment trail:
-commitment, document, payment order, history.
-
-Note that `meta_especial` and `finalidade_especial` hang off the *executor*
-(`id_executor`), not off the plan.
-
-## A worked example
-
-Which federal bodies decentralize the most money, and to what?
+Note where the beneficiary lives. The action plan carries only
+`id_beneficiario`; the name, CNPJ and state are in `beneficiarios_especiais`.
+There is no way to filter action plans by state directly — you filter the
+beneficiaries and join:
 
 ```python
 import math
 
-programas = tg.get(
-    "ted", "programa",
-    select=["id_programa", "tx_nome_programa", "sigla_unidade_descentralizadora"],
-    limit=math.inf,
-)
+beneficiarios = tg.get("especiais", "beneficiarios_especiais", limit=math.inf)
+pe = beneficiarios[beneficiarios["uf_beneficiario"] == "PE"]
 
+planos = tg.get("especiais", "planos_acao_especiais", limit=math.inf)
+planos = planos[planos["id_beneficiario"].isin(pe["id_beneficiario"])]
+```
+
+`beneficiarios_especiais` has five columns and is small enough to take whole,
+which makes this cheaper than it looks.
+
+## fundoafundo
+
+Same shape, with the program at the top. Here the action plan does carry the
+state, so a filter does the work the join would:
+
+```python
 planos = tg.get(
-    "ted", "plano_acao",
-    select=["id_plano_acao", "id_programa", "vl_total_plano_acao", "aa_ano_plano_acao"],
-    limit=math.inf,
-)
-
-(
-    planos.merge(programas, on="id_programa", how="inner")
-    .groupby("sigla_unidade_descentralizadora")
-    .agg(planos=("id_plano_acao", "size"), total=("vl_total_plano_acao", "sum"))
-    .sort_values("total", ascending=False)
-    .head()
-)
-```
-
-| sigla_unidade_descentralizadora | planos | total |
-|---|---:|---:|
-| MDS | 229 | 422595208242 |
-| MS | 794 | 14472373138 |
-| FNDCT | 154 | 13779027285 |
-| MIDR | 603 | 5450415783 |
-| MAPA | 284 | 2835531350 |
-
-Retrieving both tables in full is reasonable here — 5500 and 6176 rows, six
-requests between them.
-
-## Check the join, do not assume it
-
-A join that quietly drops rows looks exactly like a join that worked. Count
-before and after:
-
-```python
-(~planos["id_programa"].isin(programas["id_programa"])).sum()
-# 0
-```
-
-Every action plan in TED belongs to a programme that is also published. That is
-worth knowing rather than assuming, because it is not true of every key in
-these APIs. Sampling two hundred values from each relationship above, most
-resolve completely, but three do not:
-
-| Child | Parent | Resolved |
-|---|---|---|
-| `meta_especial.id_executor` | `executor_especial.id_executor` | 175 / 200 |
-| `finalidade_especial.id_executor` | `executor_especial.id_executor` | 175 / 200 |
-| `programa_acao_orcamentaria.id_programa` | `programa.id_programa` | 198 / 200 |
-
-These are gaps in what the platform publishes, not in the retrieval. An inner
-join will drop those rows silently; use an anti-join to see them first, and
-decide deliberately:
-
-```python
-orphans = planos[~planos["id_programa"].isin(programas["id_programa"])]
-```
-
-If you are joining a filtered subset, fetch the other side with a matching
-filter rather than trimming afterwards:
-
-```python
-planos_2024 = tg.get(
-    "ted", "plano_acao",
-    aa_ano_plano_acao=2024,
-    select=["id_plano_acao", "id_programa"],
-    limit=math.inf,
-)
-
-notas = tg.get(
-    "ted", "nota_credito",
-    id_plano_acao=tg.in_(planos_2024["id_plano_acao"].tolist()),
+    "fundoafundo", "planos_acao",
+    uf_ente_recebedor_plano_acao="PE",
     limit=math.inf,
 )
 ```
 
-`in_()` sends the whole set to the service, so the filtering happens there. A
-very long list makes for a URL the service rejects — see
-[the pagination guide](pagination.md#long-in_-lists) for the batching helper.
+## parcerias
 
-## Identifiers are nullable integers
+The chain here is the longest, and it is the one worth following end to end: it
+runs from the program that announces money to the bank statement of the account
+it leaves from.
 
-Columns the API declares as `bigint` come back as pandas' nullable `Int64`,
-which holds the full 64-bit range. Joins between them work as expected, since
-both sides use the same dtype.
-
-```python
-planos.dtypes["id_plano_acao"]
-# Int64
+```
+programa ──< proposta ──< parceria ──< parceria_conta ──< extrato_bancario
+   │            │            │
+   │            │            └──< documento_habil ──< ordem_pagamento
+   │            │            └──< empenho_parceria
+   │            ├──< meta_proposta
+   │            ├──< item_proposta
+   │            ├──< cronograma_desembolso
+   │            └──< analise_proposta
+   └──< beneficiario_emenda_parlamentar
 ```
 
-!!! note "Difference from the R sibling"
-    `transferegovr` has to return these as a double, because R has no nullable
-    integer that wide. If you compare results across the two packages, the
-    values agree but the types do not.
-
-## Repeated identifiers are real
-
-Some of these tables are views with a join already baked in, so an identifier
-that reads like a key can repeat. `fundoafundo/programa` has 129 rows but 125
-distinct `id_programa`. Check before you use one as a key:
-
 ```python
-programas_ff = tg.get("fundoafundo", "programa", limit=math.inf)
+propostas = tg.get(
+    "parcerias", "proposta",
+    sg_uf_recebedor="PE", situacao_proposta="Aprovada", limit=math.inf,
+)
 
-len(programas_ff), programas_ff["id_programa"].nunique()
-# (129, 125)
+parcerias = tg.get("parcerias", "parceria", limit=math.inf)
+parcerias = parcerias[parcerias["id_proposta"].isin(propostas["id_proposta"])]
+
+contas = tg.get("parcerias", "parceria_conta", limit=math.inf)
+contas = contas[contas["id_parceria"].isin(parcerias["id_parceria"])]
 ```
 
-`tables()` reports the primary key where the API declares one, which it does
-for ten of the forty-eight tables. Where `primary_key` is `None`, no uniqueness
-is guaranteed.
+`extrato_bancario` holds over a million rows, so join into it rather than
+collecting it whole — filter by the account you care about:
 
 ```python
-tg.tables().dropna(subset=["primary_key"])
+extratos = pd.concat(
+    tg.get("parcerias", "extrato_bancario", id_parceria_conta=int(i), limit=math.inf)
+    for i in contas["id_parceria_conta"]
+)
 ```
+
+## Children that arrive already joined
+
+Several child tables have no endpoint. The API folds them into the parent as an
+array, which means the join is already done and you only have to explode.
+
+In `parcerias`: `ufs_habilitadas`, `programa_atende_a`, `categorias_despesa`,
+`resultados_esperados` and `indicadores_programa` on `programa`;
+`intervenientes_proposta` and `categorias_despesa_proposta` on `proposta`;
+`etapas_proposta` on `meta_proposta`; `publicacoes_parceria` on `parceria`;
+`classificacoes_ingresso` on `parceria_conta`; `tipos_analise` on
+`analise_proposta`; `indicacoes_beneficiario` on
+`beneficiario_emenda_parlamentar`; and `classificacao_despesa` on
+`item_proposta`.
+
+In `fundoafundo`: `programa_acao_orcamentaria` and `programa_natureza_despesa`
+on `programas`, `categorias_despesa_lancamento` on
+`gestao_financeira_lancamentos`, and `categorias_despesa_subtransacao` on
+`gestao_financeira_subtransacoes`.
+
+`especiais` has none: all twenty of its tables have endpoints.
+
+To flatten one:
+
+```python
+programas = tg.get("parcerias", "programa", limit=math.inf)
+
+ufs = (
+    programas[["id_programa", "ufs_habilitadas"]]
+    .explode("ufs_habilitadas")
+    .dropna(subset=["ufs_habilitadas"])
+)
+ufs = ufs.join(pd.json_normalize(ufs.pop("ufs_habilitadas")).set_index(ufs.index))
+```
+
+`fields(nested=...)` tells you the shape before you explode:
+
+```python
+tg.fields("parcerias", "programa", nested="ufs_habilitadas")
+```
+
+## Joins that do not fully resolve
+
+Not every identifier finds its parent. Government systems have rows that
+predate a constraint, and rows whose parent has since been removed. Check
+rather than assume:
+
+```python
+missing = ~planos["id_beneficiario"].isin(beneficiarios["id_beneficiario"])
+missing.sum()
+```
+
+An inner join would drop those rows silently. Use a left join and count the
+nulls, so a gap upstream shows up as a number rather than as a quietly smaller
+answer.

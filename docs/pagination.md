@@ -1,216 +1,188 @@
 # Collecting large tables safely
 
+These tables are large and the page size is small. This page is about getting
+all of a table without losing rows to pagination, and about knowing what a
+download will cost before starting it.
+
 ```python
 import math
 import transferegovpy as tg
 ```
 
-## The cap you cannot see
+## Measure first
 
-The service returns at most **1000 rows per request**, however many are asked
-for, and it does so without complaint: ask for a hundred thousand and you are
-given a thousand and a `206 Partial Content`. Nothing in the body says the
-result was truncated. Only the `Content-Range` header does.
-
-This package reads that header, which is why `limit` counts rows rather than
-requests, and why anything above 1000 is collected page by page:
+The fifty-five tables hold about 6.9 million rows between them, spread very
+unevenly — from 15 rows in `especiais/programas_especiais` to over a million in
+`fundoafundo/gestao_financeira_lancamentos`.
 
 ```python
-plans = tg.get("ted", "plano_acao", limit=2500)
-
-len(plans)
-# 2500
-tg.metadata(plans)["pages"]
-# 3
+sizes = tg.tables(counts=True)
+sizes.sort_values("rows", ascending=False).head()
 ```
 
-`page_size` is capped at 1000 for the same reason. A larger value would be
-accepted by the package, silently truncated by the service, and the shortfall
-would look like missing data.
-
-## Ask how big it is first
+That call makes fifty-five requests, and caches them. For a single table:
 
 ```python
 tg.count("fundoafundo", "gestao_financeira_lancamentos")
-# 1115444
+#> 1121046
 ```
 
-To size everything at once, `tables()` takes a `counts` argument. It is the
-only part of that function that touches the network — one request per table,
-cached, so the second call in a session is free:
+`count()` takes the same filters as `get()`, so you can size the thing you
+actually want rather than the whole table:
 
 ```python
-tg.tables(counts=True).sort_values("rows", ascending=False).head()
+tg.count("parcerias", "proposta", sg_uf_recebedor="PE")
 ```
 
-| module | table | columns | rows |
-|---|---|---:|---:|
-| fundoafundo | gestao_financeira_lancamentos | 32 | 1115444 |
-| fundoafundo | gestao_financeira_subtransacoes | 16 | 377666 |
-| transferenciasespeciais | historico_pagamento_especial | 5 | 281163 |
-| fundoafundo | plano_acao_historico | 5 | 183379 |
-| transferenciasespeciais | meta_especial | 16 | 156016 |
+## What a page costs
 
-A million rows is over a thousand requests. The package throttles itself to
-sixty requests a minute by default, so that download takes something like
-twenty minutes. That is usually the wrong shape for the question being asked.
-
-## Narrow first, then collect
-
-Two things make a large query smaller, and both happen on the server.
-
-**Select only the columns you need.** `gestao_financeira_lancamentos` has 32
-columns; if you want four of them, the other 28 need never cross the network.
+The services cap a page at **200 rows**. Unlike some APIs, they do not silently
+truncate a larger request — asking for 201 is a `422`, and the package refuses
+it before sending:
 
 ```python
-tg.get(
-    "fundoafundo", "gestao_financeira_lancamentos",
-    select=[
-        "id_lancamento_gestao_financeira",
-        "id_plano_acao",
-        "data_lancamento_gestao_financeira",
-        "valor_lancamento_gestao_financeira",
-    ],
-    limit=math.inf,
-)
+tg.get("parcerias", "proposta", page_size=201)
+#> ValueError: page_size must be a whole number between 1 and 200.
 ```
 
-**Filter before you fetch.** A year's worth of a table is usually what was
-wanted anyway:
+So the arithmetic is simple and worth doing. A million-row table is
+`ceil(1121046 / 200)` = **5,606 requests**. At the default throttle of sixty a
+minute, that is over an hour and a half.
 
 ```python
-tg.count(
-    "fundoafundo", "gestao_financeira_lancamentos",
-    data_lancamento_gestao_financeira=[tg.gte("2025-01-01"), tg.lt("2026-01-01")],
-)
+rows = tg.count("fundoafundo", "gestao_financeira_lancamentos")
+math.ceil(rows / 200)
+#> 5606
 ```
 
-## Why the order matters
-
-Offset pagination asks for rows 0–999, then 1000–1999, and so on. In Postgres a
-query without `ORDER BY` has **no defined row order**: the planner is free to
-return rows differently between two executions, and if it does, page two can
-repeat rows from page one and skip others entirely. The result has the right
-number of rows and the wrong contents.
-
-So every request this package makes carries an explicit order. By default it is
-the table's primary key where the API declares one, and its identifier columns
-otherwise:
+If you genuinely need a table that size, consider whether a filter narrows it
+first, and raise the throttle deliberately rather than by accident:
 
 ```python
-tg.metadata(plans)["order"]
-# ['id_plano_acao.asc', 'id_programa.asc', 'sq_instrumento.asc']
+tg.configure(requests_per_minute=120)
 ```
 
-You can supply your own, and pagination will use it:
+## Limits and offsets count rows
+
+`limit` and `offset` are in rows, not pages, whatever `page_size` is set to.
 
 ```python
-tg.get("ted", "plano_acao", order="vl_total_plano_acao.desc", limit=2500)
+tg.get("especiais", "meta_especiais", limit=450)
 ```
 
-Bear in mind that ordering by a column with many ties leaves the order within
-each tie undefined, which brings the problem back. Prefer an identifier, or add
-one as a tiebreaker:
+That is three requests: 200, 200, 50 — the last page is trimmed to the limit.
+An offset that falls inside a page is handled by fetching the page it lands in
+and dropping the rows before it:
 
 ```python
-tg.get(
-    "ted", "plano_acao",
-    order=["vl_total_plano_acao.desc", "id_plano_acao.asc"],
-    limit=2500,
-)
+tg.get("especiais", "meta_especiais", limit=100, offset=137, page_size=60)
 ```
 
-## Resuming, and taking it in pieces
-
-`offset` skips rows that have already been collected, so a long download can be
-taken in sittings:
+`math.inf` collects everything that matches:
 
 ```python
-first = tg.get("ted", "plano_acao_etapa", limit=20000)
-rest = tg.get("ted", "plano_acao_etapa", limit=math.inf, offset=20000)
+tg.get("especiais", "programas_especiais", limit=math.inf)
 ```
 
-Both parts must use the same order, or they are pages of two different
-sequences. The default order is deterministic for a given table, so leaving
-`order` alone is the safe choice here.
+## Checking what you got
 
-## Long `in_()` lists
-
-A filter built with `in_()` over a few thousand identifiers produces a URL the
-service cannot accept, and the failure it produces without this package is not
-readable: curl reports `Error in the HTTP2 framing layer`, which says nothing
-about the query. The package checks the length first:
+Every result carries the pagination state the API reported:
 
 ```python
-tg.get("ted", "plano_acao", id_plano_acao=tg.in_(range(3000)))
-# URLTooLongError: The request URL is 20047 bytes, over the 7000 the service
-# accepts. A filter built with in_() over a long sequence is the usual cause.
+metas = tg.get("especiais", "meta_especiais", limit=450)
+
+tg.metadata(metas)
+#> {'module': 'especiais', 'table': 'meta_especiais', 'total_rows': 156060.0,
+#>  'rows_returned': 450, 'pages': 3, ...}
 ```
 
-Take it in batches:
+`total_rows` is how many rows matched, `rows_returned` how many you have. If
+collection ends short of what the API said it would return, that is an
+`IncompleteResultWarning` rather than a silent truncation.
+
+## Why the row order is safe to rely on
+
+These APIs publish no ordering parameter. Page two is simply "page two", and
+whether that is a well-defined thing depends on the server keeping a stable
+order between requests — which nothing in the documentation promises.
+
+Postgres makes no such promise in general: a query without `ORDER BY` may
+return rows in a different order between executions, and under page-based
+pagination that means page two can repeat rows from page one and skip others
+entirely. A row count would not reveal it. Two pages of 200 that overlap by 40
+rows still add up to 400.
+
+So it was tested rather than assumed. The check is to fetch the same rows at
+two different page sizes and compare them as sequences:
 
 ```python
-import pandas as pd
+def strip(frame):
+    out = frame.reset_index(drop=True).copy()
+    out.attrs = {}
+    return out
 
-def in_batches(module, table, column, values, size=300, **kwargs):
-    values = list(values)
-    parts = [
-        tg.get(module, table, filters={column: tg.in_(values[i : i + size])},
-               limit=math.inf, progress=False, **kwargs)
-        for i in range(0, len(values), size)
-    ]
-    return pd.concat(parts, ignore_index=True)
+big = tg.get("especiais", "meta_especiais", limit=450, page_size=200)
+small = tg.get("especiais", "meta_especiais", limit=450, page_size=50)
+
+strip(big).equals(strip(small))
+#> True
 ```
 
-## When the count and the contents disagree
+Three requests and nine requests, cutting the same 450 rows at different
+boundaries, produce the same rows in the same order. That is what rules out
+both overlap and skipping.
 
-The number of rows collected is checked against the total the API reported:
-
-```
-IncompleteResultWarning: Collected 4820 row(s) where the API reported 4900.
-The table may have changed while it was being read; check metadata() on the
-result.
-```
-
-This is a real possibility on a long download, since the underlying tables are
-refreshed daily. It is a warning rather than an error because a nearly complete
-result is still worth having — but it must be visible, and `metadata()` records
-both numbers so the gap stays in the data rather than only in the console.
+The same comparison holds 100,000 rows deep, across repeated calls, on tables
+with no natural key, and on tables with nested columns. `tests/test_live.py`
+re-runs all of it against the real services, so a change upstream shows up as a
+failing test rather than as quietly wrong data.
 
 ## Caching
 
-Every request is cached for an hour, so re-running an analysis does not
-re-fetch what it already has. Each page is cached separately, so an interrupted
-collection resumes from the network only where it has to.
+Responses are cached for an hour, so re-running a collection during a session
+costs nothing:
 
 ```python
-tg.cache_dir()
-# PosixPath('/tmp/transferegovpy-cache')
+first = tg.get("especiais", "meta_especiais", limit=450)
+again = tg.get("especiais", "meta_especiais", limit=450)
+
+tg.metadata(again)["cached"]
+#> True
 ```
 
-The default is the session's temporary directory, so nothing outlives the
-session unless you ask for it:
+The default cache lives in a temporary directory, so nothing is written outside
+the session unless you ask. For a long collection you will want it to survive:
 
 ```python
 tg.cache_dir("~/.cache/transferegovpy")
 ```
 
-Set `TRANSFEREGOVPY_CACHE_DIR` in your environment to make that permanent, and
-adjust the lifetime with `tg.set_cache_ttl(86400)` — the data behind these APIs
-is refreshed once a day, so an hour is conservative.
+The APIs send no `ETag`, `Cache-Control` or `Last-Modified`, so HTTP caching
+would store nothing — this cache is the package's own. Use `updated_at()` to
+decide when a cached copy is stale.
 
-`tg.metadata(frame)["cached"]` tells you whether a result came from the network
-or from disk.
+## A pattern for very large tables
 
-## Rate limiting and retries
-
-Requests are throttled to sixty a minute and retried up to four times on a 429
-or a 5xx, with exponential backoff and jitter. A 400 is not retried: it means
-the service rejected the query itself and will reject it identically next time.
-
-Both are adjustable, but the defaults exist to keep the package a considerate
-client of a public service:
+For anything in the hundreds of thousands, collect in slices and write each one
+out, so an interrupted run does not start over:
 
 ```python
-tg.configure(requests_per_minute=30, max_tries=6, timeout=120)
+import pathlib
+
+total = tg.count("fundoafundo", "gestao_financeira_lancamentos")
+slice_size = 20_000
+
+for start in range(0, total, slice_size):
+    path = pathlib.Path(f"lancamentos-{start:08d}.parquet")
+    if path.exists():
+        continue
+
+    rows = tg.get(
+        "fundoafundo", "gestao_financeira_lancamentos",
+        limit=slice_size, offset=start,
+    )
+    rows.to_parquet(path)
 ```
+
+Because the order is stable, the slices reassemble into the whole table without
+gaps or repeats.

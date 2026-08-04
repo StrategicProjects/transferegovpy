@@ -1,29 +1,35 @@
 """Access the 'TransfereGov' open data APIs from Python.
 
 TransfereGov is the Brazilian federal government's platform for transfers to
-states, municipalities and civil society. It publishes three APIs — special
-transfers, fund-to-fund transfers, and decentralized credit (TED) — covering
-forty-eight tables between them.
-
-All three are `PostgREST <https://postgrest.org>`_ services, so this package
-exposes their filtering, column selection and ordering directly rather than
-wrapping each table in a function of its own::
+states, municipalities and civil society. This package covers the three modules
+published at ``api-publica.transferegov.gestao.gov.br`` — special transfers,
+fund-to-fund transfers and partnership management — fifty-five tables between
+them::
 
     import transferegovpy as tg
 
     tg.modules()
-    tg.tables("ted")
-    tg.fields("ted", "plano_acao")
+    tg.tables("parcerias")
+    tg.fields("parcerias", "proposta")
+    tg.params("parcerias", "proposta")
 
-    tg.get("ted", "plano_acao", aa_ano_plano_acao=tg.gte(2024), limit=50)
+    tg.get("parcerias", "proposta", sg_uf_recebedor="PE", limit=50)
 
-Table names, column names and categorical values are in Portuguese because
-they belong to the API.
+Filters are the endpoints' own query parameters, combined with AND. The
+services compare for equality and nothing else, and they publish no ordering or
+column-selection parameter.
+
+A parameter name the packaged schema does not know is an error rather than a
+request: these services ignore an unrecognised parameter and answer 200 with
+the whole table, so an unchecked typo would return plausible, wrong data.
+
+Table names, column names, parameter names and categorical values are in
+Portuguese because they belong to the API.
 """
 
 from __future__ import annotations
 
-__version__ = "0.1.1"
+__version__ = "0.2.0"
 
 from ._cache import cache_clear, cache_dir
 from ._cache import enabled as cache_enabled
@@ -41,34 +47,17 @@ from ._errors import (
     TransferegovError,
     URLTooLongError,
 )
-from .filters import (
-    Filter,
-    eq,
-    gt,
-    gte,
-    ilike,
-    in_,
-    is_false,
-    is_null,
-    is_true,
-    like,
-    lt,
-    lte,
-    neq,
-    not_,
-    operators,
-    re_imatch,
-    re_match,
-)
+from ._params import params
 from .metadata import fields, modules, schema_date, tables
 from .query import (
     MAX_PAGE,
     count,
+    especiais,
     fundo_a_fundo,
     get,
     metadata,
-    ted,
-    transferencias_especiais,
+    parcerias,
+    updated_at,
 )
 
 __all__ = [
@@ -76,34 +65,18 @@ __all__ = [
     # queries
     "get",
     "count",
-    "ted",
+    "updated_at",
+    "especiais",
     "fundo_a_fundo",
-    "transferencias_especiais",
+    "parcerias",
     "metadata",
     "MAX_PAGE",
     # discovery
     "modules",
     "tables",
     "fields",
+    "params",
     "schema_date",
-    # filters
-    "Filter",
-    "eq",
-    "neq",
-    "gt",
-    "gte",
-    "lt",
-    "lte",
-    "like",
-    "ilike",
-    "re_match",
-    "re_imatch",
-    "in_",
-    "is_null",
-    "is_true",
-    "is_false",
-    "not_",
-    "operators",
     # configuration
     "configure",
     "cache_dir",

@@ -26,78 +26,161 @@ def live_settings():
     yield
 
 
-def test_every_module_answers():
-    for module in tg.modules()["module"]:
-        table = tg.tables(module)["table"].iloc[0]
-        assert len(tg.get(module, table, limit=1).columns) > 0
+def strip(frame):
+    out = frame.reset_index(drop=True).copy()
+    out.attrs = {}
+    return out
 
 
-def test_every_table_still_has_the_columns_we_froze():
-    tables = tg.tables()
+def test_every_table_in_the_frozen_schema_still_answers():
+    failures = []
 
-    for _, row in tables.iterrows():
+    for _, row in tg.tables().iterrows():
+        try:
+            tg.get(row["module"], row["table"], limit=1)
+        except Exception as error:  # noqa: BLE001 - collecting every failure
+            failures.append(f"{row['module']}/{row['table']}: {error}")
+
+    assert failures == []
+
+
+def test_the_frozen_columns_match_what_the_services_send():
+    drift = []
+
+    for _, row in tg.tables().iterrows():
         frame = tg.get(row["module"], row["table"], limit=1)
-        known = set(tg.fields(row["module"], row["table"])["field"])
+        if len(frame) == 0:
+            continue
 
-        assert set(frame.columns) <= known, f"{row['module']}/{row['table']} has unknown columns"
+        expected = set(tg.fields(row["module"], row["table"])["field"])
+        got = set(frame.columns)
+        if got != expected:
+            drift.append(
+                f"{row['module']}/{row['table']}: "
+                f"new {sorted(got - expected)} gone {sorted(expected - got)}"
+            )
 
-
-def test_the_row_count_matches_a_full_fetch():
-    total = tg.count("transferenciasespeciais", "programa_especial")
-    rows = tg.get("transferenciasespeciais", "programa_especial", limit=math.inf, progress=False)
-
-    assert len(rows) == total
-
-
-def test_paging_is_stable_whatever_the_page_size():
-    def key(frame):
-        return sorted(frame.astype(str).agg("|".join, axis=1))
-
-    one = tg.get("fundoafundo", "programa", limit=1000, progress=False)
-    many = tg.get("fundoafundo", "programa", limit=math.inf, page_size=25, progress=False)
-
-    assert tg.metadata(many)["pages"] > 1
-    assert key(one) == key(many)
+    assert drift == []
 
 
-def test_the_service_still_caps_a_page_at_1000_rows():
-    # `page_size` is capped at 1000 because the service silently truncates
-    # anything larger. If that ever changes, the cap should be revisited.
-    frame = tg.get("ted", "plano_acao_etapa", select=["id_etapa"], limit=1000, page_size=1000)
-
-    assert len(frame) == 1000
-
-
-def test_filters_reach_the_service_and_narrow_the_result():
-    everything = tg.count("ted", "plano_acao")
-    one_year = tg.count("ted", "plano_acao", aa_ano_plano_acao=2024)
-
-    assert one_year < everything
-
-    rows = tg.get("ted", "plano_acao", aa_ano_plano_acao=2024, limit=50)
-    assert (rows["aa_ano_plano_acao"] == 2024).all()
+# Pagination ------------------------------------------------------------------
+#
+# A row count proves nothing about pagination. What proves pages neither
+# overlap nor skip is fetching the same rows at two page sizes and comparing
+# them, which is also what establishes that the server's order is stable.
 
 
-def test_dates_and_timestamps_come_back_typed():
-    plans = tg.get("ted", "plano_acao", limit=20)
-    assert str(plans.dtypes["dt_inicio_vigencia"]) == "datetime64[ns]"
+def test_the_same_rows_come_back_whatever_the_page_size():
+    big = tg.get("especiais", "meta_especiais", limit=450, page_size=200)
+    small = tg.get("especiais", "meta_especiais", limit=450, page_size=50)
 
-    financial = tg.get("ted", "programacao_financeira", limit=20)
-    assert str(financial.dtypes["dh_recebimento_programacao"]) == "datetime64[ns]"
+    assert len(big) == 450
+    assert strip(big).equals(strip(small))
+    assert tg.metadata(big)["pages"] == 3
+    assert tg.metadata(small)["pages"] == 9
 
 
-def test_an_unknown_column_is_rejected_by_the_service():
+def test_the_order_is_stable_deep_into_a_large_table():
+    first = tg.get("especiais", "meta_especiais", limit=100, offset=100_000, page_size=100)
+    again = tg.get(
+        "especiais", "meta_especiais", limit=100, offset=100_000, page_size=50,
+        use_cache=False,
+    )
+
+    assert list(first["id_meta"]) == list(again["id_meta"])
+
+
+def test_an_offset_lands_on_the_row_it_names():
+    full = tg.get("especiais", "meta_especiais", limit=300, page_size=200)
+    offset = tg.get("especiais", "meta_especiais", limit=100, offset=137, page_size=60)
+
+    assert list(offset["id_meta"]) == list(full["id_meta"].iloc[137:237])
+
+
+# Filters ---------------------------------------------------------------------
+
+
+def test_a_filter_narrows_the_result_and_the_total_agrees():
+    total = tg.count("parcerias", "proposta")
+    filtered = tg.count("parcerias", "proposta", sg_uf_recebedor="PE")
+
+    assert 0 < filtered < total
+
+    rows = tg.get("parcerias", "proposta", sg_uf_recebedor="PE", limit=25)
+    assert (rows["sg_uf_recebedor"] == "PE").all()
+    assert tg.metadata(rows)["total_rows"] == filtered
+
+
+def test_filters_combine_with_and():
+    uf = tg.count("parcerias", "proposta", sg_uf_recebedor="PE")
+    both = tg.count(
+        "parcerias", "proposta", sg_uf_recebedor="PE", situacao_proposta="Aprovada"
+    )
+
+    assert both <= uf
+
+
+def test_the_enumerations_the_schema_froze_are_the_ones_the_service_takes():
+    values = tg.params("parcerias", "proposta").set_index("param")
+    for value in values.loc["situacao_proposta", "values"]:
+        tg.count("parcerias", "proposta", situacao_proposta=value)
+
+
+# The property that motivates validating parameter names client-side ----------
+
+
+def test_the_service_really_does_ignore_an_unknown_parameter():
+    # If this ever starts failing because the service began rejecting unknown
+    # parameters, the client-side check in _params could be relaxed. Until
+    # then it is the only thing standing between a typo and a silently
+    # unfiltered answer.
     tg.configure(validate=False)
     try:
-        with pytest.raises(tg.HTTPError) as caught:
-            tg.get("ted", "plano_acao", coluna_inexistente=1)
-        assert caught.value.status == 400
+        total = tg.count("parcerias", "proposta")
+        bogus = tg.count("parcerias", "proposta", in_situacao_proposta="Aprovada")
     finally:
         tg.configure(validate=True)
 
+    assert bogus == total
 
-def test_the_python_and_r_packages_see_the_same_totals():
-    # Both freeze the same OpenAPI documents, so a divergence means one of the
-    # two schemas is stale.
-    assert len(tg.tables()) == 48
-    assert int(tg.tables()["columns"].sum()) == 599
+
+# Freshness -------------------------------------------------------------------
+
+
+def test_every_module_reports_when_it_was_last_loaded():
+    import datetime as dt
+
+    for module in tg.modules()["module"]:
+        stamp = tg.updated_at(module)
+        assert stamp > dt.datetime(2020, 1, 1)
+
+
+# Nested columns --------------------------------------------------------------
+
+
+def test_a_nested_column_arrives_as_lists_matching_its_sub_schema():
+    rows = tg.get("parcerias", "programa", limit=20)
+
+    populated = [v for v in rows["ufs_habilitadas"] if isinstance(v, list) and v]
+    if not populated:
+        pytest.skip("no nested rows in this sample")
+
+    expected = set(tg.fields("parcerias", "programa", nested="ufs_habilitadas")["field"])
+    assert set(populated[0][0]) == expected
+
+
+# Parity with the R sibling ---------------------------------------------------
+
+
+def test_the_schema_matches_the_documented_totals():
+    # transferegovr freezes the same documents and must agree.
+    assert len(tg.tables()) == 55
+    assert tg.tables()["columns"].sum() == 811
+    assert tg.tables()["params"].sum() == 817
+
+
+def test_inf_collects_a_whole_small_table():
+    total = tg.count("parcerias", "proposta_resultado_indicador")
+    frame = tg.get("parcerias", "proposta_resultado_indicador", limit=math.inf)
+
+    assert len(frame) == total

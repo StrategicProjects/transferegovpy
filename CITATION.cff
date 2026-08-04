@@ -8,7 +8,7 @@ abstract: >-
   credit. Returns typed pandas DataFrames, with pagination, throttling, retries
   and an optional response cache.
 type: software
-version: 0.1.1
+version: 0.2.0
 license: MIT
 doi: "10.5281/zenodo.21729827"
 identifiers:
@@ -25,7 +25,7 @@ keywords:
   - Brazil
   - public finance
   - open data
-  - PostgREST
+  - open data
 authors:
   - family-names: Leite
     given-names: André

@@ -1,11 +1,11 @@
 {
   "title": "transferegovpy: Access the TransfereGov open data APIs from Python",
-  "description": "<p>A Python client for the three open data APIs of TransfereGov, the Brazilian federal government's platform for transfers to states, municipalities and civil society: special transfers (<em>transferências especiais</em>), fund-to-fund transfers (<em>fundo a fundo</em>) and decentralized credit (<em>termo de execução descentralizada</em>). Together they publish forty-eight tables on action plans, programmes, budget commitments, financial execution, management reports and payment orders.</p><p>All three are PostgREST services, so the package exposes their filtering, column selection and ordering directly rather than wrapping each table in a function of its own. Results are returned as pandas DataFrames typed from the APIs' own OpenAPI schema, which is frozen into the package so that validation and typing work offline. Pagination is bounded by the service's silent 1000-row cap and carries an explicit ordering, so pages cannot overlap or skip rows; the number of rows collected is checked against the total the API reports. Requests are throttled and retried with exponential backoff, and responses are cached.</p><p>This is the Python sibling of transferegovr, which covers the same APIs from R with the same semantics.</p>",
+  "description": "<p>A Python client for the open data APIs of TransfereGov, the Brazilian federal government's platform for transfers to states, municipalities and civil society. It covers the three modules published at api-publica.transferegov.gestao.gov.br: special transfers (<em>transferências especiais</em>), fund-to-fund transfers (<em>fundo a fundo</em>) and partnership management (<em>gestão de parcerias</em>). Together they publish fifty-five tables on action plans, programs, proposals, partnerships, budget commitments, financial execution, management reports, payment orders and bank statements.</p><p>Filters are the services' own typed query parameters, validated against the published schema before a request is made. That check is load-bearing: these services ignore a query parameter they do not recognise and answer 200 with the whole table, so an unchecked typo returns a plausible, unfiltered result. Results are returned as pandas DataFrames typed from the APIs' own OpenAPI schema, which is frozen into the package so that validation and typing work offline. Pagination is by page number, bounded by the service's 200-row cap, and the number of rows collected is checked against the total the API reports; the server's row order was verified empirically rather than assumed, since these APIs publish no ordering parameter. Requests are throttled and retried with exponential backoff, and responses are cached.</p><p>This is the Python sibling of transferegovr, which covers the same APIs from R with the same semantics.</p>",
   "upload_type": "software",
   "access_right": "open",
   "license": "mit",
   "language": "eng",
-  "version": "0.1.1",
+  "version": "0.2.0",
   "keywords": [
     "TransfereGov",
     "Brazil",
@@ -14,7 +14,7 @@
     "intergovernmental transfers",
     "open data",
     "open government",
-    "PostgREST",
+    "FastAPI",
     "Python",
     "pandas"
   ],
