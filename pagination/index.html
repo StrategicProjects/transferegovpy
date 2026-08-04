@@ -407,10 +407,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#the-cap-you-cannot-see" class="md-nav__link">
+  <a href="#measure-first" class="md-nav__link">
     <span class="md-ellipsis">
       
-        The cap you cannot see
+        Measure first
       
     </span>
   </a>
@@ -418,10 +418,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#ask-how-big-it-is-first" class="md-nav__link">
+  <a href="#what-a-page-costs" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Ask how big it is first
+        What a page costs
       
     </span>
   </a>
@@ -429,10 +429,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#narrow-first-then-collect" class="md-nav__link">
+  <a href="#limits-and-offsets-count-rows" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Narrow first, then collect
+        Limits and offsets count rows
       
     </span>
   </a>
@@ -440,10 +440,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#why-the-order-matters" class="md-nav__link">
+  <a href="#checking-what-you-got" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Why the order matters
+        Checking what you got
       
     </span>
   </a>
@@ -451,32 +451,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#resuming-and-taking-it-in-pieces" class="md-nav__link">
+  <a href="#why-the-row-order-is-safe-to-rely-on" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Resuming, and taking it in pieces
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#long-in_-lists" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Long in_() lists
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#when-the-count-and-the-contents-disagree" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        When the count and the contents disagree
+        Why the row order is safe to rely on
       
     </span>
   </a>
@@ -495,10 +473,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#rate-limiting-and-retries" class="md-nav__link">
+  <a href="#a-pattern-for-very-large-tables" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Rate limiting and retries
+        A pattern for very large tables
       
     </span>
   </a>
@@ -630,10 +608,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#the-cap-you-cannot-see" class="md-nav__link">
+  <a href="#measure-first" class="md-nav__link">
     <span class="md-ellipsis">
       
-        The cap you cannot see
+        Measure first
       
     </span>
   </a>
@@ -641,10 +619,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#ask-how-big-it-is-first" class="md-nav__link">
+  <a href="#what-a-page-costs" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Ask how big it is first
+        What a page costs
       
     </span>
   </a>
@@ -652,10 +630,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#narrow-first-then-collect" class="md-nav__link">
+  <a href="#limits-and-offsets-count-rows" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Narrow first, then collect
+        Limits and offsets count rows
       
     </span>
   </a>
@@ -663,10 +641,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#why-the-order-matters" class="md-nav__link">
+  <a href="#checking-what-you-got" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Why the order matters
+        Checking what you got
       
     </span>
   </a>
@@ -674,32 +652,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#resuming-and-taking-it-in-pieces" class="md-nav__link">
+  <a href="#why-the-row-order-is-safe-to-rely-on" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Resuming, and taking it in pieces
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#long-in_-lists" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Long in_() lists
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#when-the-count-and-the-contents-disagree" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        When the count and the contents disagree
+        Why the row order is safe to rely on
       
     </span>
   </a>
@@ -718,10 +674,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#rate-limiting-and-retries" class="md-nav__link">
+  <a href="#a-pattern-for-very-large-tables" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Rate limiting and retries
+        A pattern for very large tables
       
     </span>
   </a>
@@ -746,190 +702,134 @@
 
 
 <h1 id="collecting-large-tables-safely">Collecting large tables safely<a class="headerlink" href="#collecting-large-tables-safely" title="Permanent link">&para;</a></h1>
+<p>These tables are large and the page size is small. This page is about getting
+all of a table without losing rows to pagination, and about knowing what a
+download will cost before starting it.</p>
 <div class="highlight"><pre><span></span><code><span class="kn">import</span><span class="w"> </span><span class="nn">math</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">transferegovpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">tg</span>
 </code></pre></div>
-<h2 id="the-cap-you-cannot-see">The cap you cannot see<a class="headerlink" href="#the-cap-you-cannot-see" title="Permanent link">&para;</a></h2>
-<p>The service returns at most <strong>1000 rows per request</strong>, however many are asked
-for, and it does so without complaint: ask for a hundred thousand and you are
-given a thousand and a <code>206 Partial Content</code>. Nothing in the body says the
-result was truncated. Only the <code>Content-Range</code> header does.</p>
-<p>This package reads that header, which is why <code>limit</code> counts rows rather than
-requests, and why anything above 1000 is collected page by page:</p>
-<div class="highlight"><pre><span></span><code><span class="n">plans</span> <span class="o">=</span> <span class="n">tg</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;ted&quot;</span><span class="p">,</span> <span class="s2">&quot;plano_acao&quot;</span><span class="p">,</span> <span class="n">limit</span><span class="o">=</span><span class="mi">2500</span><span class="p">)</span>
-
-<span class="nb">len</span><span class="p">(</span><span class="n">plans</span><span class="p">)</span>
-<span class="c1"># 2500</span>
-<span class="n">tg</span><span class="o">.</span><span class="n">metadata</span><span class="p">(</span><span class="n">plans</span><span class="p">)[</span><span class="s2">&quot;pages&quot;</span><span class="p">]</span>
-<span class="c1"># 3</span>
+<h2 id="measure-first">Measure first<a class="headerlink" href="#measure-first" title="Permanent link">&para;</a></h2>
+<p>The fifty-five tables hold about 6.9 million rows between them, spread very
+unevenly — from 15 rows in <code>especiais/programas_especiais</code> to over a million in
+<code>fundoafundo/gestao_financeira_lancamentos</code>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">sizes</span> <span class="o">=</span> <span class="n">tg</span><span class="o">.</span><span class="n">tables</span><span class="p">(</span><span class="n">counts</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="n">sizes</span><span class="o">.</span><span class="n">sort_values</span><span class="p">(</span><span class="s2">&quot;rows&quot;</span><span class="p">,</span> <span class="n">ascending</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span><span class="o">.</span><span class="n">head</span><span class="p">()</span>
 </code></pre></div>
-<p><code>page_size</code> is capped at 1000 for the same reason. A larger value would be
-accepted by the package, silently truncated by the service, and the shortfall
-would look like missing data.</p>
-<h2 id="ask-how-big-it-is-first">Ask how big it is first<a class="headerlink" href="#ask-how-big-it-is-first" title="Permanent link">&para;</a></h2>
+<p>That call makes fifty-five requests, and caches them. For a single table:</p>
 <div class="highlight"><pre><span></span><code><span class="n">tg</span><span class="o">.</span><span class="n">count</span><span class="p">(</span><span class="s2">&quot;fundoafundo&quot;</span><span class="p">,</span> <span class="s2">&quot;gestao_financeira_lancamentos&quot;</span><span class="p">)</span>
-<span class="c1"># 1115444</span>
+<span class="c1">#&gt; 1121046</span>
 </code></pre></div>
-<p>To size everything at once, <code>tables()</code> takes a <code>counts</code> argument. It is the
-only part of that function that touches the network — one request per table,
-cached, so the second call in a session is free:</p>
-<div class="highlight"><pre><span></span><code><span class="n">tg</span><span class="o">.</span><span class="n">tables</span><span class="p">(</span><span class="n">counts</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span><span class="o">.</span><span class="n">sort_values</span><span class="p">(</span><span class="s2">&quot;rows&quot;</span><span class="p">,</span> <span class="n">ascending</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span><span class="o">.</span><span class="n">head</span><span class="p">()</span>
+<p><code>count()</code> takes the same filters as <code>get()</code>, so you can size the thing you
+actually want rather than the whole table:</p>
+<div class="highlight"><pre><span></span><code><span class="n">tg</span><span class="o">.</span><span class="n">count</span><span class="p">(</span><span class="s2">&quot;parcerias&quot;</span><span class="p">,</span> <span class="s2">&quot;proposta&quot;</span><span class="p">,</span> <span class="n">sg_uf_recebedor</span><span class="o">=</span><span class="s2">&quot;PE&quot;</span><span class="p">)</span>
 </code></pre></div>
-<table>
-<thead>
-<tr>
-<th>module</th>
-<th>table</th>
-<th style="text-align: right;">columns</th>
-<th style="text-align: right;">rows</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>fundoafundo</td>
-<td>gestao_financeira_lancamentos</td>
-<td style="text-align: right;">32</td>
-<td style="text-align: right;">1115444</td>
-</tr>
-<tr>
-<td>fundoafundo</td>
-<td>gestao_financeira_subtransacoes</td>
-<td style="text-align: right;">16</td>
-<td style="text-align: right;">377666</td>
-</tr>
-<tr>
-<td>transferenciasespeciais</td>
-<td>historico_pagamento_especial</td>
-<td style="text-align: right;">5</td>
-<td style="text-align: right;">281163</td>
-</tr>
-<tr>
-<td>fundoafundo</td>
-<td>plano_acao_historico</td>
-<td style="text-align: right;">5</td>
-<td style="text-align: right;">183379</td>
-</tr>
-<tr>
-<td>transferenciasespeciais</td>
-<td>meta_especial</td>
-<td style="text-align: right;">16</td>
-<td style="text-align: right;">156016</td>
-</tr>
-</tbody>
-</table>
-<p>A million rows is over a thousand requests. The package throttles itself to
-sixty requests a minute by default, so that download takes something like
-twenty minutes. That is usually the wrong shape for the question being asked.</p>
-<h2 id="narrow-first-then-collect">Narrow first, then collect<a class="headerlink" href="#narrow-first-then-collect" title="Permanent link">&para;</a></h2>
-<p>Two things make a large query smaller, and both happen on the server.</p>
-<p><strong>Select only the columns you need.</strong> <code>gestao_financeira_lancamentos</code> has 32
-columns; if you want four of them, the other 28 need never cross the network.</p>
-<div class="highlight"><pre><span></span><code><span class="n">tg</span><span class="o">.</span><span class="n">get</span><span class="p">(</span>
-    <span class="s2">&quot;fundoafundo&quot;</span><span class="p">,</span> <span class="s2">&quot;gestao_financeira_lancamentos&quot;</span><span class="p">,</span>
-    <span class="n">select</span><span class="o">=</span><span class="p">[</span>
-        <span class="s2">&quot;id_lancamento_gestao_financeira&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;id_plano_acao&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;data_lancamento_gestao_financeira&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;valor_lancamento_gestao_financeira&quot;</span><span class="p">,</span>
-    <span class="p">],</span>
-    <span class="n">limit</span><span class="o">=</span><span class="n">math</span><span class="o">.</span><span class="n">inf</span><span class="p">,</span>
-<span class="p">)</span>
+<h2 id="what-a-page-costs">What a page costs<a class="headerlink" href="#what-a-page-costs" title="Permanent link">&para;</a></h2>
+<p>The services cap a page at <strong>200 rows</strong>. Unlike some APIs, they do not silently
+truncate a larger request — asking for 201 is a <code>422</code>, and the package refuses
+it before sending:</p>
+<div class="highlight"><pre><span></span><code><span class="n">tg</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;parcerias&quot;</span><span class="p">,</span> <span class="s2">&quot;proposta&quot;</span><span class="p">,</span> <span class="n">page_size</span><span class="o">=</span><span class="mi">201</span><span class="p">)</span>
+<span class="c1">#&gt; ValueError: page_size must be a whole number between 1 and 200.</span>
 </code></pre></div>
-<p><strong>Filter before you fetch.</strong> A year's worth of a table is usually what was
-wanted anyway:</p>
-<div class="highlight"><pre><span></span><code><span class="n">tg</span><span class="o">.</span><span class="n">count</span><span class="p">(</span>
-    <span class="s2">&quot;fundoafundo&quot;</span><span class="p">,</span> <span class="s2">&quot;gestao_financeira_lancamentos&quot;</span><span class="p">,</span>
-    <span class="n">data_lancamento_gestao_financeira</span><span class="o">=</span><span class="p">[</span><span class="n">tg</span><span class="o">.</span><span class="n">gte</span><span class="p">(</span><span class="s2">&quot;2025-01-01&quot;</span><span class="p">),</span> <span class="n">tg</span><span class="o">.</span><span class="n">lt</span><span class="p">(</span><span class="s2">&quot;2026-01-01&quot;</span><span class="p">)],</span>
-<span class="p">)</span>
+<p>So the arithmetic is simple and worth doing. A million-row table is
+<code>ceil(1121046 / 200)</code> = <strong>5,606 requests</strong>. At the default throttle of sixty a
+minute, that is over an hour and a half.</p>
+<div class="highlight"><pre><span></span><code><span class="n">rows</span> <span class="o">=</span> <span class="n">tg</span><span class="o">.</span><span class="n">count</span><span class="p">(</span><span class="s2">&quot;fundoafundo&quot;</span><span class="p">,</span> <span class="s2">&quot;gestao_financeira_lancamentos&quot;</span><span class="p">)</span>
+<span class="n">math</span><span class="o">.</span><span class="n">ceil</span><span class="p">(</span><span class="n">rows</span> <span class="o">/</span> <span class="mi">200</span><span class="p">)</span>
+<span class="c1">#&gt; 5606</span>
 </code></pre></div>
-<h2 id="why-the-order-matters">Why the order matters<a class="headerlink" href="#why-the-order-matters" title="Permanent link">&para;</a></h2>
-<p>Offset pagination asks for rows 0–999, then 1000–1999, and so on. In Postgres a
-query without <code>ORDER BY</code> has <strong>no defined row order</strong>: the planner is free to
-return rows differently between two executions, and if it does, page two can
-repeat rows from page one and skip others entirely. The result has the right
-number of rows and the wrong contents.</p>
-<p>So every request this package makes carries an explicit order. By default it is
-the table's primary key where the API declares one, and its identifier columns
-otherwise:</p>
-<div class="highlight"><pre><span></span><code><span class="n">tg</span><span class="o">.</span><span class="n">metadata</span><span class="p">(</span><span class="n">plans</span><span class="p">)[</span><span class="s2">&quot;order&quot;</span><span class="p">]</span>
-<span class="c1"># [&#39;id_plano_acao.asc&#39;, &#39;id_programa.asc&#39;, &#39;sq_instrumento.asc&#39;]</span>
+<p>If you genuinely need a table that size, consider whether a filter narrows it
+first, and raise the throttle deliberately rather than by accident:</p>
+<div class="highlight"><pre><span></span><code><span class="n">tg</span><span class="o">.</span><span class="n">configure</span><span class="p">(</span><span class="n">requests_per_minute</span><span class="o">=</span><span class="mi">120</span><span class="p">)</span>
 </code></pre></div>
-<p>You can supply your own, and pagination will use it:</p>
-<div class="highlight"><pre><span></span><code><span class="n">tg</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;ted&quot;</span><span class="p">,</span> <span class="s2">&quot;plano_acao&quot;</span><span class="p">,</span> <span class="n">order</span><span class="o">=</span><span class="s2">&quot;vl_total_plano_acao.desc&quot;</span><span class="p">,</span> <span class="n">limit</span><span class="o">=</span><span class="mi">2500</span><span class="p">)</span>
+<h2 id="limits-and-offsets-count-rows">Limits and offsets count rows<a class="headerlink" href="#limits-and-offsets-count-rows" title="Permanent link">&para;</a></h2>
+<p><code>limit</code> and <code>offset</code> are in rows, not pages, whatever <code>page_size</code> is set to.</p>
+<div class="highlight"><pre><span></span><code><span class="n">tg</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;especiais&quot;</span><span class="p">,</span> <span class="s2">&quot;meta_especiais&quot;</span><span class="p">,</span> <span class="n">limit</span><span class="o">=</span><span class="mi">450</span><span class="p">)</span>
 </code></pre></div>
-<p>Bear in mind that ordering by a column with many ties leaves the order within
-each tie undefined, which brings the problem back. Prefer an identifier, or add
-one as a tiebreaker:</p>
-<div class="highlight"><pre><span></span><code><span class="n">tg</span><span class="o">.</span><span class="n">get</span><span class="p">(</span>
-    <span class="s2">&quot;ted&quot;</span><span class="p">,</span> <span class="s2">&quot;plano_acao&quot;</span><span class="p">,</span>
-    <span class="n">order</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;vl_total_plano_acao.desc&quot;</span><span class="p">,</span> <span class="s2">&quot;id_plano_acao.asc&quot;</span><span class="p">],</span>
-    <span class="n">limit</span><span class="o">=</span><span class="mi">2500</span><span class="p">,</span>
-<span class="p">)</span>
+<p>That is three requests: 200, 200, 50 — the last page is trimmed to the limit.
+An offset that falls inside a page is handled by fetching the page it lands in
+and dropping the rows before it:</p>
+<div class="highlight"><pre><span></span><code><span class="n">tg</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;especiais&quot;</span><span class="p">,</span> <span class="s2">&quot;meta_especiais&quot;</span><span class="p">,</span> <span class="n">limit</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span> <span class="n">offset</span><span class="o">=</span><span class="mi">137</span><span class="p">,</span> <span class="n">page_size</span><span class="o">=</span><span class="mi">60</span><span class="p">)</span>
 </code></pre></div>
-<h2 id="resuming-and-taking-it-in-pieces">Resuming, and taking it in pieces<a class="headerlink" href="#resuming-and-taking-it-in-pieces" title="Permanent link">&para;</a></h2>
-<p><code>offset</code> skips rows that have already been collected, so a long download can be
-taken in sittings:</p>
-<div class="highlight"><pre><span></span><code><span class="n">first</span> <span class="o">=</span> <span class="n">tg</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;ted&quot;</span><span class="p">,</span> <span class="s2">&quot;plano_acao_etapa&quot;</span><span class="p">,</span> <span class="n">limit</span><span class="o">=</span><span class="mi">20000</span><span class="p">)</span>
-<span class="n">rest</span> <span class="o">=</span> <span class="n">tg</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;ted&quot;</span><span class="p">,</span> <span class="s2">&quot;plano_acao_etapa&quot;</span><span class="p">,</span> <span class="n">limit</span><span class="o">=</span><span class="n">math</span><span class="o">.</span><span class="n">inf</span><span class="p">,</span> <span class="n">offset</span><span class="o">=</span><span class="mi">20000</span><span class="p">)</span>
+<p><code>math.inf</code> collects everything that matches:</p>
+<div class="highlight"><pre><span></span><code><span class="n">tg</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;especiais&quot;</span><span class="p">,</span> <span class="s2">&quot;programas_especiais&quot;</span><span class="p">,</span> <span class="n">limit</span><span class="o">=</span><span class="n">math</span><span class="o">.</span><span class="n">inf</span><span class="p">)</span>
 </code></pre></div>
-<p>Both parts must use the same order, or they are pages of two different
-sequences. The default order is deterministic for a given table, so leaving
-<code>order</code> alone is the safe choice here.</p>
-<h2 id="long-in_-lists">Long <code>in_()</code> lists<a class="headerlink" href="#long-in_-lists" title="Permanent link">&para;</a></h2>
-<p>A filter built with <code>in_()</code> over a few thousand identifiers produces a URL the
-service cannot accept, and the failure it produces without this package is not
-readable: curl reports <code>Error in the HTTP2 framing layer</code>, which says nothing
-about the query. The package checks the length first:</p>
-<div class="highlight"><pre><span></span><code><span class="n">tg</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;ted&quot;</span><span class="p">,</span> <span class="s2">&quot;plano_acao&quot;</span><span class="p">,</span> <span class="n">id_plano_acao</span><span class="o">=</span><span class="n">tg</span><span class="o">.</span><span class="n">in_</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="mi">3000</span><span class="p">)))</span>
-<span class="c1"># URLTooLongError: The request URL is 20047 bytes, over the 7000 the service</span>
-<span class="c1"># accepts. A filter built with in_() over a long sequence is the usual cause.</span>
-</code></pre></div>
-<p>Take it in batches:</p>
-<div class="highlight"><pre><span></span><code><span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
+<h2 id="checking-what-you-got">Checking what you got<a class="headerlink" href="#checking-what-you-got" title="Permanent link">&para;</a></h2>
+<p>Every result carries the pagination state the API reported:</p>
+<div class="highlight"><pre><span></span><code><span class="n">metas</span> <span class="o">=</span> <span class="n">tg</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;especiais&quot;</span><span class="p">,</span> <span class="s2">&quot;meta_especiais&quot;</span><span class="p">,</span> <span class="n">limit</span><span class="o">=</span><span class="mi">450</span><span class="p">)</span>
 
-<span class="k">def</span><span class="w"> </span><span class="nf">in_batches</span><span class="p">(</span><span class="n">module</span><span class="p">,</span> <span class="n">table</span><span class="p">,</span> <span class="n">column</span><span class="p">,</span> <span class="n">values</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="mi">300</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
-    <span class="n">values</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">values</span><span class="p">)</span>
-    <span class="n">parts</span> <span class="o">=</span> <span class="p">[</span>
-        <span class="n">tg</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">module</span><span class="p">,</span> <span class="n">table</span><span class="p">,</span> <span class="n">filters</span><span class="o">=</span><span class="p">{</span><span class="n">column</span><span class="p">:</span> <span class="n">tg</span><span class="o">.</span><span class="n">in_</span><span class="p">(</span><span class="n">values</span><span class="p">[</span><span class="n">i</span> <span class="p">:</span> <span class="n">i</span> <span class="o">+</span> <span class="n">size</span><span class="p">])},</span>
-               <span class="n">limit</span><span class="o">=</span><span class="n">math</span><span class="o">.</span><span class="n">inf</span><span class="p">,</span> <span class="n">progress</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
-        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">values</span><span class="p">),</span> <span class="n">size</span><span class="p">)</span>
-    <span class="p">]</span>
-    <span class="k">return</span> <span class="n">pd</span><span class="o">.</span><span class="n">concat</span><span class="p">(</span><span class="n">parts</span><span class="p">,</span> <span class="n">ignore_index</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="n">tg</span><span class="o">.</span><span class="n">metadata</span><span class="p">(</span><span class="n">metas</span><span class="p">)</span>
+<span class="c1">#&gt; {&#39;module&#39;: &#39;especiais&#39;, &#39;table&#39;: &#39;meta_especiais&#39;, &#39;total_rows&#39;: 156060.0,</span>
+<span class="c1">#&gt;  &#39;rows_returned&#39;: 450, &#39;pages&#39;: 3, ...}</span>
 </code></pre></div>
-<h2 id="when-the-count-and-the-contents-disagree">When the count and the contents disagree<a class="headerlink" href="#when-the-count-and-the-contents-disagree" title="Permanent link">&para;</a></h2>
-<p>The number of rows collected is checked against the total the API reported:</p>
-<div class="highlight"><pre><span></span><code>IncompleteResultWarning: Collected 4820 row(s) where the API reported 4900.
-The table may have changed while it was being read; check metadata() on the
-result.
+<p><code>total_rows</code> is how many rows matched, <code>rows_returned</code> how many you have. If
+collection ends short of what the API said it would return, that is an
+<code>IncompleteResultWarning</code> rather than a silent truncation.</p>
+<h2 id="why-the-row-order-is-safe-to-rely-on">Why the row order is safe to rely on<a class="headerlink" href="#why-the-row-order-is-safe-to-rely-on" title="Permanent link">&para;</a></h2>
+<p>These APIs publish no ordering parameter. Page two is simply "page two", and
+whether that is a well-defined thing depends on the server keeping a stable
+order between requests — which nothing in the documentation promises.</p>
+<p>Postgres makes no such promise in general: a query without <code>ORDER BY</code> may
+return rows in a different order between executions, and under page-based
+pagination that means page two can repeat rows from page one and skip others
+entirely. A row count would not reveal it. Two pages of 200 that overlap by 40
+rows still add up to 400.</p>
+<p>So it was tested rather than assumed. The check is to fetch the same rows at
+two different page sizes and compare them as sequences:</p>
+<div class="highlight"><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">strip</span><span class="p">(</span><span class="n">frame</span><span class="p">):</span>
+    <span class="n">out</span> <span class="o">=</span> <span class="n">frame</span><span class="o">.</span><span class="n">reset_index</span><span class="p">(</span><span class="n">drop</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+    <span class="n">out</span><span class="o">.</span><span class="n">attrs</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="k">return</span> <span class="n">out</span>
+
+<span class="n">big</span> <span class="o">=</span> <span class="n">tg</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;especiais&quot;</span><span class="p">,</span> <span class="s2">&quot;meta_especiais&quot;</span><span class="p">,</span> <span class="n">limit</span><span class="o">=</span><span class="mi">450</span><span class="p">,</span> <span class="n">page_size</span><span class="o">=</span><span class="mi">200</span><span class="p">)</span>
+<span class="n">small</span> <span class="o">=</span> <span class="n">tg</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;especiais&quot;</span><span class="p">,</span> <span class="s2">&quot;meta_especiais&quot;</span><span class="p">,</span> <span class="n">limit</span><span class="o">=</span><span class="mi">450</span><span class="p">,</span> <span class="n">page_size</span><span class="o">=</span><span class="mi">50</span><span class="p">)</span>
+
+<span class="n">strip</span><span class="p">(</span><span class="n">big</span><span class="p">)</span><span class="o">.</span><span class="n">equals</span><span class="p">(</span><span class="n">strip</span><span class="p">(</span><span class="n">small</span><span class="p">))</span>
+<span class="c1">#&gt; True</span>
 </code></pre></div>
-<p>This is a real possibility on a long download, since the underlying tables are
-refreshed daily. It is a warning rather than an error because a nearly complete
-result is still worth having — but it must be visible, and <code>metadata()</code> records
-both numbers so the gap stays in the data rather than only in the console.</p>
+<p>Three requests and nine requests, cutting the same 450 rows at different
+boundaries, produce the same rows in the same order. That is what rules out
+both overlap and skipping.</p>
+<p>The same comparison holds 100,000 rows deep, across repeated calls, on tables
+with no natural key, and on tables with nested columns. <code>tests/test_live.py</code>
+re-runs all of it against the real services, so a change upstream shows up as a
+failing test rather than as quietly wrong data.</p>
 <h2 id="caching">Caching<a class="headerlink" href="#caching" title="Permanent link">&para;</a></h2>
-<p>Every request is cached for an hour, so re-running an analysis does not
-re-fetch what it already has. Each page is cached separately, so an interrupted
-collection resumes from the network only where it has to.</p>
-<div class="highlight"><pre><span></span><code><span class="n">tg</span><span class="o">.</span><span class="n">cache_dir</span><span class="p">()</span>
-<span class="c1"># PosixPath(&#39;/tmp/transferegovpy-cache&#39;)</span>
+<p>Responses are cached for an hour, so re-running a collection during a session
+costs nothing:</p>
+<div class="highlight"><pre><span></span><code><span class="n">first</span> <span class="o">=</span> <span class="n">tg</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;especiais&quot;</span><span class="p">,</span> <span class="s2">&quot;meta_especiais&quot;</span><span class="p">,</span> <span class="n">limit</span><span class="o">=</span><span class="mi">450</span><span class="p">)</span>
+<span class="n">again</span> <span class="o">=</span> <span class="n">tg</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;especiais&quot;</span><span class="p">,</span> <span class="s2">&quot;meta_especiais&quot;</span><span class="p">,</span> <span class="n">limit</span><span class="o">=</span><span class="mi">450</span><span class="p">)</span>
+
+<span class="n">tg</span><span class="o">.</span><span class="n">metadata</span><span class="p">(</span><span class="n">again</span><span class="p">)[</span><span class="s2">&quot;cached&quot;</span><span class="p">]</span>
+<span class="c1">#&gt; True</span>
 </code></pre></div>
-<p>The default is the session's temporary directory, so nothing outlives the
-session unless you ask for it:</p>
+<p>The default cache lives in a temporary directory, so nothing is written outside
+the session unless you ask. For a long collection you will want it to survive:</p>
 <div class="highlight"><pre><span></span><code><span class="n">tg</span><span class="o">.</span><span class="n">cache_dir</span><span class="p">(</span><span class="s2">&quot;~/.cache/transferegovpy&quot;</span><span class="p">)</span>
 </code></pre></div>
-<p>Set <code>TRANSFEREGOVPY_CACHE_DIR</code> in your environment to make that permanent, and
-adjust the lifetime with <code>tg.set_cache_ttl(86400)</code> — the data behind these APIs
-is refreshed once a day, so an hour is conservative.</p>
-<p><code>tg.metadata(frame)["cached"]</code> tells you whether a result came from the network
-or from disk.</p>
-<h2 id="rate-limiting-and-retries">Rate limiting and retries<a class="headerlink" href="#rate-limiting-and-retries" title="Permanent link">&para;</a></h2>
-<p>Requests are throttled to sixty a minute and retried up to four times on a 429
-or a 5xx, with exponential backoff and jitter. A 400 is not retried: it means
-the service rejected the query itself and will reject it identically next time.</p>
-<p>Both are adjustable, but the defaults exist to keep the package a considerate
-client of a public service:</p>
-<div class="highlight"><pre><span></span><code><span class="n">tg</span><span class="o">.</span><span class="n">configure</span><span class="p">(</span><span class="n">requests_per_minute</span><span class="o">=</span><span class="mi">30</span><span class="p">,</span> <span class="n">max_tries</span><span class="o">=</span><span class="mi">6</span><span class="p">,</span> <span class="n">timeout</span><span class="o">=</span><span class="mi">120</span><span class="p">)</span>
+<p>The APIs send no <code>ETag</code>, <code>Cache-Control</code> or <code>Last-Modified</code>, so HTTP caching
+would store nothing — this cache is the package's own. Use <code>updated_at()</code> to
+decide when a cached copy is stale.</p>
+<h2 id="a-pattern-for-very-large-tables">A pattern for very large tables<a class="headerlink" href="#a-pattern-for-very-large-tables" title="Permanent link">&para;</a></h2>
+<p>For anything in the hundreds of thousands, collect in slices and write each one
+out, so an interrupted run does not start over:</p>
+<div class="highlight"><pre><span></span><code><span class="kn">import</span><span class="w"> </span><span class="nn">pathlib</span>
+
+<span class="n">total</span> <span class="o">=</span> <span class="n">tg</span><span class="o">.</span><span class="n">count</span><span class="p">(</span><span class="s2">&quot;fundoafundo&quot;</span><span class="p">,</span> <span class="s2">&quot;gestao_financeira_lancamentos&quot;</span><span class="p">)</span>
+<span class="n">slice_size</span> <span class="o">=</span> <span class="mi">20_000</span>
+
+<span class="k">for</span> <span class="n">start</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">total</span><span class="p">,</span> <span class="n">slice_size</span><span class="p">):</span>
+    <span class="n">path</span> <span class="o">=</span> <span class="n">pathlib</span><span class="o">.</span><span class="n">Path</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;lancamentos-</span><span class="si">{</span><span class="n">start</span><span class="si">:</span><span class="s2">08d</span><span class="si">}</span><span class="s2">.parquet&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">():</span>
+        <span class="k">continue</span>
+
+    <span class="n">rows</span> <span class="o">=</span> <span class="n">tg</span><span class="o">.</span><span class="n">get</span><span class="p">(</span>
+        <span class="s2">&quot;fundoafundo&quot;</span><span class="p">,</span> <span class="s2">&quot;gestao_financeira_lancamentos&quot;</span><span class="p">,</span>
+        <span class="n">limit</span><span class="o">=</span><span class="n">slice_size</span><span class="p">,</span> <span class="n">offset</span><span class="o">=</span><span class="n">start</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="n">rows</span><span class="o">.</span><span class="n">to_parquet</span><span class="p">(</span><span class="n">path</span><span class="p">)</span>
 </code></pre></div>
+<p>Because the order is stable, the slices reassemble into the whole table without
+gaps or repeats.</p>
 
 
 

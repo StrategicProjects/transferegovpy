@@ -493,6 +493,67 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
+  <a href="#020" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        0.2.0
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="0.2.0">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#what-is-covered" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What is covered
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#filters" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Filters
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pagination" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Pagination
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#other-changes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Other changes
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#011" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -549,6 +610,67 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
+  <a href="#020" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        0.2.0
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="0.2.0">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#what-is-covered" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What is covered
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#filters" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Filters
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pagination" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Pagination
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#other-changes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Other changes
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#011" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -588,6 +710,84 @@
 
 
 <h1 id="changelog">Changelog<a class="headerlink" href="#changelog" title="Permanent link">&para;</a></h1>
+<h2 id="020">0.2.0<a class="headerlink" href="#020" title="Permanent link">&para;</a></h2>
+<p>The package now targets the public API host,
+<code>api-publica.transferegov.gestao.gov.br</code>. That host serves a different kind of
+service from the PostgREST one the package was built against, so this release
+rewrites the client rather than extending it. Code written against 0.1.x will
+need changing.</p>
+<h3 id="what-is-covered">What is covered<a class="headerlink" href="#what-is-covered" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong><code>parcerias</code> is new</strong>: partnership management, 15 tables, including the
+  partnerships and their proposals, budget commitments, payment orders and bank
+  statements. It has no equivalent in the previous release.</li>
+<li><strong><code>especiais</code> replaces <code>transferenciasespeciais</code></strong>, and grows from 14 tables
+  to 20. The additions are the financial ones: transaction entries,
+  sub-entries, account balances, beneficiaries, and three history tables.</li>
+<li><strong><code>fundoafundo</code> stays</strong>, at 20 tables against the previous 21, with several
+  child tables folded into their parents as columns of lists.</li>
+<li><code>"transferenciasespeciais"</code> still resolves, as an alias for <code>"especiais"</code>.</li>
+<li><strong><code>ted</code> is gone.</strong> Decentralized credit has not been published on the public
+  API host; it exists only on the older service, which the government is
+  decommissioning on 2026-08-31. <code>ted()</code> and <code>transferencias_especiais()</code> are
+  removed, and <code>parcerias()</code> and <code>especiais()</code> take their place alongside
+  <code>fundo_a_fundo()</code>.</li>
+</ul>
+<p>55 tables and 811 columns in all, against 48 and 599 — the same totals the R
+sibling freezes from the same documents.</p>
+<h3 id="filters">Filters<a class="headerlink" href="#filters" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Filters are now the endpoints' own typed query parameters rather than
+  PostgREST operators. <code>params()</code> lists what each table accepts, with the
+  permitted values of the enumerated ones.</li>
+<li><strong>The comparison operators are removed</strong> — <code>eq()</code>, <code>neq()</code>, <code>gt()</code>, <code>gte()</code>,
+  <code>lt()</code>, <code>lte()</code>, <code>like()</code>, <code>ilike()</code>, <code>re_match()</code>, <code>re_imatch()</code>, <code>in_()</code>,
+  <code>is_null()</code>, <code>is_true()</code>, <code>is_false()</code>, <code>not_()</code>, <code>operators()</code> and the
+  <code>Filter</code> class. These services compare for equality and nothing else.</li>
+<li><strong>An unknown parameter name is an error.</strong> These services ignore a parameter
+  they do not recognise and answer <code>200</code> with the whole table, so a typo would
+  return a plausible, unfiltered result. Names are checked against the frozen
+  schema before the request is made, and a near miss is suggested.</li>
+<li>Enumerated values are checked client-side too, so a bad value fails before
+  the round trip rather than as a 422 after it.</li>
+<li>A filter given several values is refused. The service keeps the last
+  occurrence of a repeated parameter and discards the rest without reporting
+  it, so there is no way to express it.</li>
+</ul>
+<h3 id="pagination">Pagination<a class="headerlink" href="#pagination" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Pagination is by page number, and the cap is 200 rows per request rather than</li>
+<li><code>limit</code> and <code>offset</code> still count rows, including when the offset falls
+  inside a page.</li>
+<li><strong><code>order</code> and <code>select</code> are removed.</strong> These APIs publish no ordering or
+  column-selection parameter.</li>
+<li>Row order is therefore the server's. It was verified rather than assumed:
+  the same rows come back in the same sequence across page sizes, across
+  repeated calls, 100,000 rows deep, on tables with no key, and on tables with
+  nested columns.</li>
+</ul>
+<h3 id="other-changes">Other changes<a class="headerlink" href="#other-changes" title="Permanent link">&para;</a></h3>
+<ul>
+<li><code>updated_at()</code> reports when a module's data was last loaded, from the
+  <code>/data-atualizacao</code> endpoint each module publishes. It is the only freshness
+  signal these APIs give.</li>
+<li><code>fields()</code> gains a <code>nested</code> argument, describing the columns of the objects
+  inside a column of lists. 18 columns across <code>fundoafundo</code> and <code>parcerias</code>
+  arrive that way because the API folds a child table into its parent.</li>
+<li><code>fields()</code> reports <code>api_type</code> rather than <code>pg_type</code>, and no longer reports a
+  primary key: these documents declare none.</li>
+<li><code>tables()</code> gains <code>path</code>, the endpoint a table maps to, and <code>params</code>, how many
+  filters it accepts. A table may be named with either a hyphen or an
+  underscore.</li>
+<li><code>get()</code> and <code>count()</code> take <code>use_cache=</code> where they took <code>cache=</code>.</li>
+<li>A number the API declares but cannot deliver is now reported rather than
+  silently emptied. <code>codigo_conta_beneficiario_subtransacao_gestao_financeira</code>
+  is declared an integer and arrives as <code>"***"</code>, a masked account number; the
+  column is kept as text with a <code>ColumnTypeWarning</code> instead of coming back all
+  null.</li>
+<li>HTTP errors surface the validation detail the service reports, naming the
+  parameter it objected to.</li>
+</ul>
 <h2 id="011">0.1.1<a class="headerlink" href="#011" title="Permanent link">&para;</a></h2>
 <ul>
 <li>The PyPI project page showed the full text of the MIT license where the
