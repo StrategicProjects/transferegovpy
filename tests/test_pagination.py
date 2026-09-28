@@ -245,6 +245,29 @@ def test_the_page_size_is_bounded_by_what_the_service_accepts(mock):
     assert len(mock.calls) == 0
 
 
+def test_the_page_limit_is_the_modules_own_not_one_number_for_all(mock):
+    with pytest.raises(ValueError, match="between 1 and 1000"):
+        tg.get("fundoafundo", "planos_acao", page_size=1001)
+    with pytest.raises(ValueError, match="between 1 and 1000"):
+        tg.get("ted", "termos_execucao", page_size=1001)
+    assert len(mock.calls) == 0
+
+    add_page(mock, 2, total=2, page_size=1000, module="ted", table="termos-execucao")
+    tg.ted("termos_execucao", page_size=1000)
+    assert dict(query_of(mock.calls[0]))["tamanho_da_pagina"] == "1000"
+
+
+def test_the_default_page_size_is_the_largest_the_module_serves(mock):
+    add_page(mock, 2, total=2, page_size=1000, module="fundoafundo", table="planos-acao")
+    add_page(mock, 2, total=2)
+
+    tg.get("fundoafundo", "planos_acao")
+    tg.get("parcerias", "parceria")
+
+    assert dict(query_of(mock.calls[0]))["tamanho_da_pagina"] == "1000"
+    assert dict(query_of(mock.calls[1]))["tamanho_da_pagina"] == "200"
+
+
 def test_limit_and_offset_must_be_whole_numbers():
     with pytest.raises(ValueError):
         tg.get("parcerias", "parceria", limit=1.5)

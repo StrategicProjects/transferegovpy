@@ -1,7 +1,7 @@
 """Access to the frozen OpenAPI schema.
 
 ``_schema.json`` is built by ``scripts/build_schema.py`` from the documents the
-three APIs publish. Freezing it means filter validation, column typing and
+four APIs publish. Freezing it means filter validation, column typing and
 :func:`~transferegovpy.fields` work without a network connection, and that a
 change upstream shows up as a reviewable diff.
 
@@ -39,8 +39,17 @@ def default_base_url() -> str:
 
 
 def max_page() -> int:
-    """Rows per request the services cap at. Asking for more is a 422."""
+    """The page size every module accepts: the smallest of their limits."""
     return int(bundle()["max_page"])
+
+
+def max_page_size(module: str) -> int:
+    """The largest page a module serves. One row more is a 422.
+
+    200 in ``especiais`` and ``parcerias``, 1000 in ``fundoafundo`` and
+    ``ted``, as each module's OpenAPI document declares.
+    """
+    return int(bundle()["modules"][module]["max_page_size"])
 
 
 def module_names() -> list[str]:
@@ -85,8 +94,9 @@ def table_names(module: str) -> list[str]:
 def match_table(module: str, table: str) -> str:
     """Resolve a table name within a module.
 
-    The endpoints are not consistent between modules about ``-`` and ``_``, so
-    both spellings resolve to the underscore form the package exposes.
+    Endpoints spell names with ``-`` or ``_``, and the spelling has changed
+    upstream before, so both resolve to the underscore form the package
+    exposes.
     """
     if not isinstance(table, str):
         raise SchemaError(f"table must be a string, not {type(table).__name__}.")

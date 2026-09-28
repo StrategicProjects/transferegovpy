@@ -20,10 +20,12 @@ __all__ = [
     "especiais",
     "fundo_a_fundo",
     "parcerias",
+    "ted",
     "MAX_PAGE",
 ]
 
-#: Rows per request the services cap at. Asking for more is a 422.
+#: The page size every module accepts. Each module's own limit, which is what
+#: ``get()`` uses by default, is in ``modules()["max_page_size"]``.
 MAX_PAGE = _schema.max_page()
 
 _METADATA_ATTR = "transferegovpy"
@@ -35,7 +37,7 @@ def get(
     *,
     limit: float | int = 1000,
     offset: int = 0,
-    page_size: int = MAX_PAGE,
+    page_size: int | None = None,
     use_cache: bool | None = None,
     base_url: str | None = None,
     **filters,
@@ -45,15 +47,19 @@ def get(
     Filters
     -------
     Name each filter after one of the table's query parameters and give it a
-    single value. Parameters are combined with AND::
+    value. Parameters are combined with AND::
 
         tg.get("parcerias", "proposta", situacao_proposta="Aprovada")
         tg.get("parcerias", "proposta", sg_uf_recebedor="PE", ano_proposta=2025)
 
-    The services compare for equality and nothing else: there is no
-    greater-than, no pattern match and no "is one of". A parameter takes one
-    value, so query each value and concatenate the results when you need
-    several.
+    The services compare for equality: there is no greater-than and no pattern
+    match. Most parameters take one value. Some identifier parameters take
+    several and match any of them -- :func:`~transferegovpy.params` marks them
+    as ``multiple``, with the most each accepts in ``max_values``::
+
+        tg.get("ted", "planos_acao_metas", id_plano_acao=[3, 4])
+
+    For any other parameter, query each value and concatenate the results.
 
     Parameter names, and the permitted values of the enumerated ones, are in
     Portuguese because they belong to the API. Use
@@ -64,10 +70,12 @@ def get(
 
     Pagination
     ----------
-    The services return at most 200 rows per request, so ``limit`` above that
-    is met by fetching successive pages. ``limit`` counts rows, not pages; use
-    ``math.inf`` for every matching row. Several tables hold hundreds of
-    thousands of rows, so check the size with :func:`count` first.
+    Each request returns one page of at most the module's page limit -- 200
+    rows for ``especiais`` and ``parcerias``, 1000 for ``fundoafundo`` and
+    ``ted`` -- so a larger ``limit`` is met by fetching successive pages.
+    ``limit`` counts rows, not pages; use ``math.inf`` for every matching row.
+    Several tables hold hundreds of thousands of rows, so check the size with
+    :func:`count` first.
 
     Row order is the server's and cannot be set: these APIs publish no ordering
     parameter. It was checked to be stable across page sizes, across repeated
@@ -78,7 +86,7 @@ def get(
     Parameters
     ----------
     module:
-        ``"especiais"``, ``"fundoafundo"`` or ``"parcerias"``. Aliases such as
+        ``"especiais"``, ``"fundoafundo"``, ``"parcerias"`` or ``"ted"``. Aliases such as
         ``"fundo_a_fundo"`` are accepted.
     table:
         A table name from :func:`~transferegovpy.tables`.
@@ -87,7 +95,9 @@ def get(
     offset:
         Rows to skip before the first one returned.
     page_size:
-        Rows per request, between 1 and 200.
+        Rows per request. ``None``, the default, asks for the largest page the
+        module serves, which :func:`~transferegovpy.modules` reports as
+        ``max_page_size``.
     use_cache:
         Serve the request from the response cache. ``None`` follows
         :func:`~transferegovpy.cache_enabled`.
@@ -108,7 +118,10 @@ def get(
 
     limit = _check_count(limit, "limit", allow_infinite=True)
     offset = _check_count(offset, "offset", minimum=0)
-    page_size = _check_count(page_size, "page_size", maximum=MAX_PAGE)
+    max_page_size = _schema.max_page_size(module)
+    if page_size is None:
+        page_size = max_page_size
+    page_size = _check_count(page_size, "page_size", maximum=max_page_size)
 
     collected = _collect(
         module,
@@ -148,7 +161,7 @@ def count(
     """Count the rows a query matches without retrieving them.
 
     Worth doing before a large :func:`get`: the biggest table in these APIs
-    holds over a million rows, which at 200 rows a request is more than five
+    holds over 1.3 million rows, which at 200 rows a request is more than six
     thousand requests.
     """
     module = _schema.match_module(module)
@@ -214,6 +227,11 @@ def fundo_a_fundo(table: str, **kwargs) -> pd.DataFrame:
 def parcerias(table: str, **kwargs) -> pd.DataFrame:
     """:func:`get` with the module fixed to ``"parcerias"``."""
     return get("parcerias", table, **kwargs)
+
+
+def ted(table: str, **kwargs) -> pd.DataFrame:
+    """:func:`get` with the module fixed to ``"ted"``."""
+    return get("ted", table, **kwargs)
 
 
 # Collection ------------------------------------------------------------------

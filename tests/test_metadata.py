@@ -13,16 +13,20 @@ from transferegovpy._errors import SchemaError
 from .conftest import add_body, envelope
 
 
-def test_the_frozen_schema_covers_three_modules_and_fifty_five_tables():
-    assert len(tg.modules()) == 3
-    assert len(tg.tables()) == 55
-    assert tg.tables()["columns"].sum() == 811
-    assert tg.tables()["params"].sum() == 817
+def test_the_frozen_schema_covers_four_modules_and_seventy_four_tables():
+    # The same totals the R sibling freezes from the same documents.
+    assert len(tg.modules()) == 4
+    assert len(tg.tables()) == 74
+    assert tg.tables()["columns"].sum() == 1045
+    assert tg.tables()["params"].sum() == 1059
 
 
 def test_module_names_aliases_case_and_punctuation_all_resolve():
     assert _schema.match_module("parcerias") == "parcerias"
     assert _schema.match_module("PARCERIAS") == "parcerias"
+    assert _schema.match_module("ted") == "ted"
+    assert _schema.match_module("TED") == "ted"
+    assert _schema.match_module("decentralized credit") == "ted"
     assert _schema.match_module("fundoafundo") == "fundoafundo"
     assert _schema.match_module("fundo_a_fundo") == "fundoafundo"
     assert _schema.match_module("fundo a fundo") == "fundoafundo"
@@ -107,7 +111,7 @@ def test_asking_for_a_nested_column_that_is_not_one_is_an_error():
 
 def test_tables_lists_one_module_or_all_of_them():
     assert set(tg.tables("parcerias")["module"]) == {"parcerias"}
-    assert len(tg.tables("parcerias")) == 15
+    assert len(tg.tables("parcerias")) == 17
     assert set(tg.tables()["module"]) == set(tg.modules()["module"])
 
 
@@ -115,7 +119,16 @@ def test_modules_reports_each_modules_own_base_url():
     frame = tg.modules()
 
     assert frame["url"].str.startswith("https://api-publica.").all()
-    assert frame["tables"].sum() == 55
+    assert frame["tables"].sum() == 74
+
+
+def test_each_module_reports_the_page_limit_its_service_declares():
+    # Not one number: especiais and parcerias answer 422 above 200 rows a
+    # page, fundoafundo and ted above 1000.
+    limits = dict(zip(tg.modules()["module"], tg.modules()["max_page_size"]))
+
+    assert limits == {"especiais": 200, "fundoafundo": 1000, "parcerias": 200, "ted": 1000}
+    assert tg.MAX_PAGE == 200
 
 
 def test_the_schema_records_when_it_was_built():
@@ -133,5 +146,5 @@ def test_counts_true_adds_one_row_count_per_table(mock):
 
     frame = tg.tables("parcerias", counts=True)
 
-    assert len(mock.calls) == 15
-    assert list(frame["rows"]) == [42] * 15
+    assert len(mock.calls) == 17
+    assert list(frame["rows"]) == [42] * 17

@@ -11,20 +11,20 @@ import transferegovpy as tg
 
 ## Measure first
 
-The fifty-five tables hold about 6.9 million rows between them, spread very
-unevenly — from 15 rows in `especiais/programas_especiais` to over a million in
-`fundoafundo/gestao_financeira_lancamentos`.
+The seventy-four tables hold about 7.5 million rows between them, spread very
+unevenly — from none at all in `especiais/orgaos_analises_pendentes_especiais`
+to 1,362,980 in `parcerias/extrato_bancario`.
 
 ```python
 sizes = tg.tables(counts=True)
 sizes.sort_values("rows", ascending=False).head()
 ```
 
-That call makes fifty-five requests, and caches them. For a single table:
+That call makes seventy-four requests, and caches them. For a single table:
 
 ```python
 tg.count("fundoafundo", "gestao_financeira_lancamentos")
-#> 1121046
+#> 1160094
 ```
 
 `count()` takes the same filters as `get()`, so you can size the thing you
@@ -36,23 +36,28 @@ tg.count("parcerias", "proposta", sg_uf_recebedor="PE")
 
 ## What a page costs
 
-The services cap a page at **200 rows**. Unlike some APIs, they do not silently
-truncate a larger request — asking for 201 is a `422`, and the package refuses
-it before sending:
+Each module caps a page at its own size: **200 rows** in `especiais` and
+`parcerias`, **1000** in `fundoafundo` and `ted`. `modules()` reports it, and
+`page_size` defaults to it. Unlike some APIs, these do not silently truncate a
+larger request — one row over the cap is a `422`, and the package refuses it
+before sending:
 
 ```python
 tg.get("parcerias", "proposta", page_size=201)
 #> ValueError: page_size must be a whole number between 1 and 200.
 ```
 
-So the arithmetic is simple and worth doing. A million-row table is
-`ceil(1121046 / 200)` = **5,606 requests**. At the default throttle of sixty a
-minute, that is over an hour and a half.
+So the arithmetic is simple and worth doing, and the cap matters as much as the
+size. The largest table, `parcerias/extrato_bancario`, is
+`ceil(1362980 / 200)` = **6,815 requests** — at the default throttle of sixty a
+minute, nearly two hours. The second largest is barely smaller but lives in a
+module that serves pages of 1000, so it takes 1,161 requests, about twenty
+minutes.
 
 ```python
-rows = tg.count("fundoafundo", "gestao_financeira_lancamentos")
+rows = tg.count("parcerias", "extrato_bancario")
 math.ceil(rows / 200)
-#> 5606
+#> 6815
 ```
 
 If you genuinely need a table that size, consider whether a filter narrows it
@@ -92,7 +97,7 @@ Every result carries the pagination state the API reported:
 metas = tg.get("especiais", "meta_especiais", limit=450)
 
 tg.metadata(metas)
-#> {'module': 'especiais', 'table': 'meta_especiais', 'total_rows': 156060.0,
+#> {'module': 'especiais', 'table': 'meta_especiais', 'total_rows': 156193.0,
 #>  'rows_returned': 450, 'pages': 3, ...}
 ```
 

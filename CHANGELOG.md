@@ -1,5 +1,63 @@
 # Changelog
 
+## 0.3.0
+
+The services moved under 0.2.0. Checked by probing on 2026-09-28, and frozen
+from the same documents as the R sibling, transferegovr 0.2.0, whose schema
+this one matches table for table, column for column and in which parameters
+take lists.
+
+### Fixed
+
+* **Every `especiais` table answered 404.** The service respelled all 20 paths
+  from `_` to `-` (`/planos_acao_especiais` is now `/planos-acao-especiais`).
+  Table names exposed by the package do not change; only the frozen path does.
+
+### What is covered
+
+* **`ted` is back**: decentralized credit between federal bodies, now published
+  on the public host, 14 tables. Its 4 nested columns make up the 18 tables of
+  the government's data model. `ted()` returns alongside the other module
+  shortcuts. Table names differ from 0.1.x's, mostly by becoming plurals:
+  `evento` is now `eventos`, `trf` is `programacoes_financeiras_trf`.
+* `especiais` gains 3 tables (returned funds, management report analyses and
+  settlement documents) and `parcerias` 2 (`opp` and
+  `indicacao_beneficiario_emenda_parlamentar`), plus new columns and
+  parameters. Three columns of `proposta` changed from integers into
+  enumerations.
+
+74 tables, 1,045 columns and 1,059 parameters, against 55, 811 and 817.
+
+### Pagination
+
+* **The page limit is per module**: 200 rows for `especiais` and `parcerias`,
+  1000 for `fundoafundo` and `ted`, read from each module's OpenAPI document.
+  `modules()` reports it as `max_page_size`, and `page_size` now defaults to
+  it, so large `fundoafundo` and `ted` tables need a fifth of the requests.
+* `MAX_PAGE` stays at 200, the page size every module accepts.
+
+### Filters
+
+* **Some identifier parameters take several values**, sent as one
+  comma-separated value and matching any of them: 113 of them, in all four
+  modules. `params()` marks them as `multiple` and gives the most each accepts
+  in `max_values` — 100 in `especiais`, 200 elsewhere. The OpenAPI documents do
+  not say which parameters these are, and no naming rule does, so the schema
+  builder asks the service.
+* A list is checked before it is sent: whole numbers only, no missing values,
+  duplicates dropped, and no more than the parameter accepts.
+* Any other filter with several values is still refused. A one-element list is
+  now read as its single value.
+
+### Testing
+
+* `scripts/mutants.py` carries 34 deliberate defects across pagination, filter
+  validation, list encoding, parsing, transport and schema lookup, and the
+  suite kills all 34. The harness confirms it imports the mutated copy rather
+  than the editable install, and counts a hang as a kill.
+* The live suite fails on a type warning as well as an error, and checks each
+  module's page limit and every list parameter against the service.
+
 ## 0.2.0
 
 The package now targets the public API host,

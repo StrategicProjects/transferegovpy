@@ -2,13 +2,13 @@ cff-version: 1.2.0
 message: "If you use this software, please cite it as below."
 title: "transferegovpy: Access the TransfereGov open data APIs from Python"
 abstract: >-
-  A Python client for the three open data APIs of TransfereGov, the Brazilian
+  A Python client for the four open data APIs of TransfereGov, the Brazilian
   federal government's platform for transfers to states, municipalities and
-  civil society: special transfers, fund-to-fund transfers and decentralized
-  credit. Returns typed pandas DataFrames, with pagination, throttling, retries
+  civil society: special transfers, fund-to-fund transfers, partnership
+  management and decentralized credit. Returns typed pandas DataFrames, with pagination, throttling, retries
   and an optional response cache.
 type: software
-version: 0.2.0
+version: 0.3.0
 license: MIT
 doi: "10.5281/zenodo.21729827"
 identifiers:

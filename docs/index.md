@@ -12,19 +12,20 @@ society, from Python.
 ## What this package covers
 
 The package targets the public API host,
-`api-publica.transferegov.gestao.gov.br`, which publishes three modules and
-**55 tables** in all:
+`api-publica.transferegov.gestao.gov.br`, which publishes four modules and
+**74 tables** in all:
 
 | Module | Covers | Tables |
 |---|---|---|
-| `especiais` | Special transfers, created by Constitutional Amendment 105/2019 for individual parliamentary amendments | 20 |
+| `especiais` | Special transfers, created by Constitutional Amendment 105/2019 for individual parliamentary amendments | 23 |
 | `fundoafundo` | Fund-to-fund transfers, from federal funds directly to state, district and municipal funds | 20 |
-| `parcerias` | Partnership management: programs, proposals, partnerships, their financial execution and bank statements | 15 |
+| `parcerias` | Partnership management: programs, proposals, partnerships, their financial execution and bank statements | 17 |
+| `ted` | Decentralized credit between federal bodies (*termo de execução descentralizada*): programs, action plans, credit notes and financial programming | 14 |
 
-Every table in the three published data models is reachable. Where the API
-folds a child table into its parent rather than giving it an endpoint of its
-own, it arrives as a column of lists — 5 of them in `fundoafundo`, 13 in
-`parcerias` — and `fields(nested=...)` describes what is inside.
+Every table in the published data models is reachable. Where the API folds a
+child table into its parent rather than giving it an endpoint of its own, it
+arrives as a column of lists — 5 of them in `fundoafundo`, 13 in `parcerias`,
+4 in `ted` — and `fields(nested=...)` describes what is inside.
 
 This is the Python sibling of
 [transferegovr](https://strategicprojects.github.io/transferegovr/); the two
@@ -32,13 +33,9 @@ cover the same ground with the same semantics.
 
 ### What it does not cover
 
-* **`ted`**, decentralized credit between federal bodies (*termo de execução
-  descentralizada*), 13 tables. It has not been published on the public API
-  host; it exists only on the older `api.transferegov.gestao.gov.br` service,
-  **which the government is decommissioning on 2026-08-31**. Unless TED is
-  republished before then, it stops being available as an API at all.
-* **The older PostgREST endpoints** for special and fund-to-fund transfers on
-  that same host, retired on the same date.
+* **The older PostgREST endpoints** at `api.transferegov.gestao.gov.br`, which
+  version 0.1.x of this package used. The government announced their
+  retirement for 2026-08-31.
 * **The Discricionárias e Legais module (SICONV)**, which has no API: it is
   published as CSV archives at
   <https://api-publica.transferegov.gestao.gov.br/downloads>. The government
@@ -79,10 +76,17 @@ tg.get(
 )
 ```
 
-That is the whole filtering vocabulary. These services compare for equality and
-nothing else — no greater-than, no pattern match, no "is one of" — and they
-publish no ordering or column-selection parameter. `params()` lists what each
-table accepts, including the permitted values of the enumerated parameters.
+That is almost the whole filtering vocabulary. These services compare for
+equality — no greater-than, no pattern match — and publish no ordering or
+column-selection parameter. The one extension is on identifiers: 113 of them
+take several values and match any, which `params()` marks as `multiple`:
+
+```python
+tg.get("ted", "planos_acao_metas", id_plano_acao=[3, 4])
+```
+
+`params()` lists what each table accepts, including the permitted values of the
+enumerated parameters.
 
 ## A typo must not look like an answer
 
@@ -107,16 +111,17 @@ after it.
 
 ## Size first, download second
 
-The services return at most 200 rows per request, and these tables are not
-small. Ask before you fetch:
+Each request returns one page — at most 200 rows in `especiais` and
+`parcerias`, 1000 in `fundoafundo` and `ted` — and these tables are not small.
+Ask before you fetch:
 
 ```python
 tg.count("especiais", "meta_especiais")
-#> 156060
+#> 156193
 ```
 
-`limit` counts rows, not pages. Anything above 200 is collected page by page,
-and the total collected is checked against what the API reported:
+`limit` counts rows, not pages. Anything above one page is collected page by
+page, and the total collected is checked against what the API reported:
 
 ```python
 import math
@@ -153,7 +158,7 @@ these APIs give — they send no `ETag`, `Cache-Control` or `Last-Modified`:
 
 ```python
 tg.updated_at("parcerias")
-#> datetime.datetime(2026, 8, 4, 0, 0)
+#> datetime.datetime(2026, 9, 28, 0, 0)
 ```
 
 Responses are cached for an hour in a temporary directory, so nothing is
@@ -177,3 +182,4 @@ and documentation are in English.
 * <https://api-publica.transferegov.gestao.gov.br/especiais/docs>
 * <https://api-publica.transferegov.gestao.gov.br/fundoafundo/docs>
 * <https://api-publica.transferegov.gestao.gov.br/parcerias/docs>
+* <https://api-publica.transferegov.gestao.gov.br/ted/docs>

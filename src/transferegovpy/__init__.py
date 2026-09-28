@@ -1,10 +1,10 @@
 """Access the 'TransfereGov' open data APIs from Python.
 
 TransfereGov is the Brazilian federal government's platform for transfers to
-states, municipalities and civil society. This package covers the three modules
+states, municipalities and civil society. This package covers the four modules
 published at ``api-publica.transferegov.gestao.gov.br`` — special transfers,
-fund-to-fund transfers and partnership management — fifty-five tables between
-them::
+fund-to-fund transfers, partnership management and decentralized credit —
+seventy-four tables between them::
 
     import transferegovpy as tg
 
@@ -16,8 +16,8 @@ them::
     tg.get("parcerias", "proposta", sg_uf_recebedor="PE", limit=50)
 
 Filters are the endpoints' own query parameters, combined with AND. The
-services compare for equality and nothing else, and they publish no ordering or
-column-selection parameter.
+services compare for equality -- with "is one of" on some identifiers -- and
+publish no ordering or column-selection parameter.
 
 A parameter name the packaged schema does not know is an error rather than a
 request: these services ignore an unrecognised parameter and answer 200 with
@@ -29,7 +29,7 @@ Portuguese because they belong to the API.
 
 from __future__ import annotations
 
-__version__ = "0.2.0"
+__version__ = "0.3.0"
 
 from ._cache import cache_clear, cache_dir
 from ._cache import enabled as cache_enabled
@@ -57,6 +57,7 @@ from .query import (
     get,
     metadata,
     parcerias,
+    ted,
     updated_at,
 )
 
@@ -69,6 +70,7 @@ __all__ = [
     "especiais",
     "fundo_a_fundo",
     "parcerias",
+    "ted",
     "metadata",
     "MAX_PAGE",
     # discovery

@@ -144,6 +144,62 @@ def test_several_values_for_one_parameter_are_refused():
         encode("parcerias", "proposta", sg_uf_recebedor=["PE", "PB"])
 
 
+# Parameters that take a list ------------------------------------------------
+
+
+def test_a_list_taking_parameter_sends_its_values_comma_separated():
+    # The service reads `id_parceria=3,4` as "is one of"; it would read a
+    # repeated `id_parceria=3&id_parceria=4` as just 4.
+    assert encode(id_parceria=[3, 4]) == [("id_parceria", "3,4")]
+    assert encode(id_parceria=("3", "4")) == [("id_parceria", "3,4")]
+    assert encode(id_parceria=pd.Series([3, 4])) == [("id_parceria", "3,4")]
+
+
+def test_large_identifiers_in_a_list_are_not_in_scientific_notation():
+    assert encode(id_parceria=[202500037062, 1e5]) == [
+        ("id_parceria", "202500037062,100000")
+    ]
+
+
+def test_repeated_values_in_a_list_are_sent_once():
+    assert encode(id_parceria=[3, 3, 4]) == [("id_parceria", "3,4")]
+
+
+def test_a_single_element_list_is_a_single_value():
+    assert encode(in_situacao_parceria=["Aprovada"]) == [
+        ("in_situacao_parceria", "Aprovada")
+    ]
+
+
+def test_a_list_is_capped_at_what_the_parameter_accepts(mock):
+    # 200 here, 100 in especiais: the limit is frozen per parameter.
+    with pytest.raises(FilterError, match="at most 200"):
+        encode(id_parceria=list(range(1, 202)))
+    assert encode(id_parceria=list(range(1, 201)))[0][1].count(",") == 199
+
+    with pytest.raises(FilterError, match="at most 100"):
+        encode("especiais", "devolucao_especiais", id_devolucao=list(range(1, 102)))
+
+    with pytest.raises(FilterError):
+        tg.get("parcerias", "parceria", id_parceria=list(range(1, 202)))
+    assert len(mock.calls) == 0
+
+
+def test_a_list_takes_only_whole_numbers_and_no_missing_ones():
+    for bad in ([1.5, 2], [-1, 2], ["3", "x"], [3, None], [3, pd.NA], [True, False]):
+        with pytest.raises(FilterError):
+            encode(id_parceria=bad)
+
+
+def test_params_marks_which_parameters_take_a_list():
+    frame = tg.params("parcerias", "parceria").set_index("param")
+
+    assert frame.loc["id_parceria", "multiple"]
+    assert frame.loc["id_parceria", "max_values"] == 200
+    assert not frame.loc["in_situacao_parceria", "multiple"]
+    assert frame.loc["in_situacao_parceria", "max_values"] == 1
+
+
 def test_a_missing_value_is_refused():
     with pytest.raises(FilterError, match="must not be missing"):
         encode(id_parceria=pd.NA)
@@ -158,7 +214,8 @@ def test_params_describes_what_the_endpoint_accepts():
     frame = tg.params("parcerias", "proposta")
 
     assert list(frame.columns) == [
-        "param", "dtype", "api_type", "values", "pattern", "description"
+        "param", "dtype", "api_type", "values", "pattern", "description",
+        "multiple", "max_values",
     ]
     assert "situacao_proposta" in set(frame["param"])
 

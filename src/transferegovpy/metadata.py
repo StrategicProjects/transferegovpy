@@ -19,7 +19,8 @@ def modules() -> pd.DataFrame:
     -------
     pandas.DataFrame
         One row per module: its name, the label used in this documentation, the
-        number of tables it publishes, and its API base URL.
+        number of tables it publishes, the largest page it serves in one
+        request, and its API base URL.
     """
     names = _schema.module_names()
 
@@ -28,6 +29,7 @@ def modules() -> pd.DataFrame:
             "module": names,
             "label": [_schema.label(m) for m in names],
             "tables": [len(_schema.table_names(m)) for m in names],
+            "max_page_size": [_schema.max_page_size(m) for m in names],
             "url": [f"{_client.base_url(m)}/{m}" for m in names],
         }
     )
@@ -45,7 +47,7 @@ def tables(module: str | None = None, counts: bool = False) -> pd.DataFrame:
         Add a ``rows`` column with the number of rows each table currently
         holds. This is the only part of this function that needs a network
         connection: it makes one request per table, so ``tables(counts=True)``
-        with no module makes fifty-five. Responses are cached.
+        with no module makes seventy-four. Responses are cached.
 
     Returns
     -------
