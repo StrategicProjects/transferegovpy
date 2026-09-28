@@ -709,33 +709,38 @@ download will cost before starting it.</p>
 <span class="kn">import</span><span class="w"> </span><span class="nn">transferegovpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">tg</span>
 </code></pre></div>
 <h2 id="measure-first">Measure first<a class="headerlink" href="#measure-first" title="Permanent link">&para;</a></h2>
-<p>The fifty-five tables hold about 6.9 million rows between them, spread very
-unevenly — from 15 rows in <code>especiais/programas_especiais</code> to over a million in
-<code>fundoafundo/gestao_financeira_lancamentos</code>.</p>
+<p>The seventy-four tables hold about 7.5 million rows between them, spread very
+unevenly — from none at all in <code>especiais/orgaos_analises_pendentes_especiais</code>
+to 1,362,980 in <code>parcerias/extrato_bancario</code>.</p>
 <div class="highlight"><pre><span></span><code><span class="n">sizes</span> <span class="o">=</span> <span class="n">tg</span><span class="o">.</span><span class="n">tables</span><span class="p">(</span><span class="n">counts</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-<span class="n">sizes</span><span class="o">.</span><span class="n">sort_values</span><span class="p">(</span><span class="s2">&quot;rows&quot;</span><span class="p">,</span> <span class="n">ascending</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span><span class="o">.</span><span class="n">head</span><span class="p">()</span>
+<span class="n">sizes</span><span class="o">.</span><span class="n">sort_values</span><span class="p">(</span><span class="s2">"rows"</span><span class="p">,</span> <span class="n">ascending</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span><span class="o">.</span><span class="n">head</span><span class="p">()</span>
 </code></pre></div>
-<p>That call makes fifty-five requests, and caches them. For a single table:</p>
-<div class="highlight"><pre><span></span><code><span class="n">tg</span><span class="o">.</span><span class="n">count</span><span class="p">(</span><span class="s2">&quot;fundoafundo&quot;</span><span class="p">,</span> <span class="s2">&quot;gestao_financeira_lancamentos&quot;</span><span class="p">)</span>
-<span class="c1">#&gt; 1121046</span>
+<p>That call makes seventy-four requests, and caches them. For a single table:</p>
+<div class="highlight"><pre><span></span><code><span class="n">tg</span><span class="o">.</span><span class="n">count</span><span class="p">(</span><span class="s2">"fundoafundo"</span><span class="p">,</span> <span class="s2">"gestao_financeira_lancamentos"</span><span class="p">)</span>
+<span class="c1">#&gt; 1160094</span>
 </code></pre></div>
 <p><code>count()</code> takes the same filters as <code>get()</code>, so you can size the thing you
 actually want rather than the whole table:</p>
-<div class="highlight"><pre><span></span><code><span class="n">tg</span><span class="o">.</span><span class="n">count</span><span class="p">(</span><span class="s2">&quot;parcerias&quot;</span><span class="p">,</span> <span class="s2">&quot;proposta&quot;</span><span class="p">,</span> <span class="n">sg_uf_recebedor</span><span class="o">=</span><span class="s2">&quot;PE&quot;</span><span class="p">)</span>
+<div class="highlight"><pre><span></span><code><span class="n">tg</span><span class="o">.</span><span class="n">count</span><span class="p">(</span><span class="s2">"parcerias"</span><span class="p">,</span> <span class="s2">"proposta"</span><span class="p">,</span> <span class="n">sg_uf_recebedor</span><span class="o">=</span><span class="s2">"PE"</span><span class="p">)</span>
 </code></pre></div>
 <h2 id="what-a-page-costs">What a page costs<a class="headerlink" href="#what-a-page-costs" title="Permanent link">&para;</a></h2>
-<p>The services cap a page at <strong>200 rows</strong>. Unlike some APIs, they do not silently
-truncate a larger request — asking for 201 is a <code>422</code>, and the package refuses
-it before sending:</p>
-<div class="highlight"><pre><span></span><code><span class="n">tg</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;parcerias&quot;</span><span class="p">,</span> <span class="s2">&quot;proposta&quot;</span><span class="p">,</span> <span class="n">page_size</span><span class="o">=</span><span class="mi">201</span><span class="p">)</span>
+<p>Each module caps a page at its own size: <strong>200 rows</strong> in <code>especiais</code> and
+<code>parcerias</code>, <strong>1000</strong> in <code>fundoafundo</code> and <code>ted</code>. <code>modules()</code> reports it, and
+<code>page_size</code> defaults to it. Unlike some APIs, these do not silently truncate a
+larger request — one row over the cap is a <code>422</code>, and the package refuses it
+before sending:</p>
+<div class="highlight"><pre><span></span><code><span class="n">tg</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"parcerias"</span><span class="p">,</span> <span class="s2">"proposta"</span><span class="p">,</span> <span class="n">page_size</span><span class="o">=</span><span class="mi">201</span><span class="p">)</span>
 <span class="c1">#&gt; ValueError: page_size must be a whole number between 1 and 200.</span>
 </code></pre></div>
-<p>So the arithmetic is simple and worth doing. A million-row table is
-<code>ceil(1121046 / 200)</code> = <strong>5,606 requests</strong>. At the default throttle of sixty a
-minute, that is over an hour and a half.</p>
-<div class="highlight"><pre><span></span><code><span class="n">rows</span> <span class="o">=</span> <span class="n">tg</span><span class="o">.</span><span class="n">count</span><span class="p">(</span><span class="s2">&quot;fundoafundo&quot;</span><span class="p">,</span> <span class="s2">&quot;gestao_financeira_lancamentos&quot;</span><span class="p">)</span>
+<p>So the arithmetic is simple and worth doing, and the cap matters as much as the
+size. The largest table, <code>parcerias/extrato_bancario</code>, is
+<code>ceil(1362980 / 200)</code> = <strong>6,815 requests</strong> — at the default throttle of sixty a
+minute, nearly two hours. The second largest is barely smaller but lives in a
+module that serves pages of 1000, so it takes 1,161 requests, about twenty
+minutes.</p>
+<div class="highlight"><pre><span></span><code><span class="n">rows</span> <span class="o">=</span> <span class="n">tg</span><span class="o">.</span><span class="n">count</span><span class="p">(</span><span class="s2">"parcerias"</span><span class="p">,</span> <span class="s2">"extrato_bancario"</span><span class="p">)</span>
 <span class="n">math</span><span class="o">.</span><span class="n">ceil</span><span class="p">(</span><span class="n">rows</span> <span class="o">/</span> <span class="mi">200</span><span class="p">)</span>
-<span class="c1">#&gt; 5606</span>
+<span class="c1">#&gt; 6815</span>
 </code></pre></div>
 <p>If you genuinely need a table that size, consider whether a filter narrows it
 first, and raise the throttle deliberately rather than by accident:</p>
@@ -743,23 +748,23 @@ first, and raise the throttle deliberately rather than by accident:</p>
 </code></pre></div>
 <h2 id="limits-and-offsets-count-rows">Limits and offsets count rows<a class="headerlink" href="#limits-and-offsets-count-rows" title="Permanent link">&para;</a></h2>
 <p><code>limit</code> and <code>offset</code> are in rows, not pages, whatever <code>page_size</code> is set to.</p>
-<div class="highlight"><pre><span></span><code><span class="n">tg</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;especiais&quot;</span><span class="p">,</span> <span class="s2">&quot;meta_especiais&quot;</span><span class="p">,</span> <span class="n">limit</span><span class="o">=</span><span class="mi">450</span><span class="p">)</span>
+<div class="highlight"><pre><span></span><code><span class="n">tg</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"especiais"</span><span class="p">,</span> <span class="s2">"meta_especiais"</span><span class="p">,</span> <span class="n">limit</span><span class="o">=</span><span class="mi">450</span><span class="p">)</span>
 </code></pre></div>
 <p>That is three requests: 200, 200, 50 — the last page is trimmed to the limit.
 An offset that falls inside a page is handled by fetching the page it lands in
 and dropping the rows before it:</p>
-<div class="highlight"><pre><span></span><code><span class="n">tg</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;especiais&quot;</span><span class="p">,</span> <span class="s2">&quot;meta_especiais&quot;</span><span class="p">,</span> <span class="n">limit</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span> <span class="n">offset</span><span class="o">=</span><span class="mi">137</span><span class="p">,</span> <span class="n">page_size</span><span class="o">=</span><span class="mi">60</span><span class="p">)</span>
+<div class="highlight"><pre><span></span><code><span class="n">tg</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"especiais"</span><span class="p">,</span> <span class="s2">"meta_especiais"</span><span class="p">,</span> <span class="n">limit</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span> <span class="n">offset</span><span class="o">=</span><span class="mi">137</span><span class="p">,</span> <span class="n">page_size</span><span class="o">=</span><span class="mi">60</span><span class="p">)</span>
 </code></pre></div>
 <p><code>math.inf</code> collects everything that matches:</p>
-<div class="highlight"><pre><span></span><code><span class="n">tg</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;especiais&quot;</span><span class="p">,</span> <span class="s2">&quot;programas_especiais&quot;</span><span class="p">,</span> <span class="n">limit</span><span class="o">=</span><span class="n">math</span><span class="o">.</span><span class="n">inf</span><span class="p">)</span>
+<div class="highlight"><pre><span></span><code><span class="n">tg</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"especiais"</span><span class="p">,</span> <span class="s2">"programas_especiais"</span><span class="p">,</span> <span class="n">limit</span><span class="o">=</span><span class="n">math</span><span class="o">.</span><span class="n">inf</span><span class="p">)</span>
 </code></pre></div>
 <h2 id="checking-what-you-got">Checking what you got<a class="headerlink" href="#checking-what-you-got" title="Permanent link">&para;</a></h2>
 <p>Every result carries the pagination state the API reported:</p>
-<div class="highlight"><pre><span></span><code><span class="n">metas</span> <span class="o">=</span> <span class="n">tg</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;especiais&quot;</span><span class="p">,</span> <span class="s2">&quot;meta_especiais&quot;</span><span class="p">,</span> <span class="n">limit</span><span class="o">=</span><span class="mi">450</span><span class="p">)</span>
+<div class="highlight"><pre><span></span><code><span class="n">metas</span> <span class="o">=</span> <span class="n">tg</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"especiais"</span><span class="p">,</span> <span class="s2">"meta_especiais"</span><span class="p">,</span> <span class="n">limit</span><span class="o">=</span><span class="mi">450</span><span class="p">)</span>
 
 <span class="n">tg</span><span class="o">.</span><span class="n">metadata</span><span class="p">(</span><span class="n">metas</span><span class="p">)</span>
-<span class="c1">#&gt; {&#39;module&#39;: &#39;especiais&#39;, &#39;table&#39;: &#39;meta_especiais&#39;, &#39;total_rows&#39;: 156060.0,</span>
-<span class="c1">#&gt;  &#39;rows_returned&#39;: 450, &#39;pages&#39;: 3, ...}</span>
+<span class="c1">#&gt; {'module': 'especiais', 'table': 'meta_especiais', 'total_rows': 156193.0,</span>
+<span class="c1">#&gt;  'rows_returned': 450, 'pages': 3, ...}</span>
 </code></pre></div>
 <p><code>total_rows</code> is how many rows matched, <code>rows_returned</code> how many you have. If
 collection ends short of what the API said it would return, that is an
@@ -780,8 +785,8 @@ two different page sizes and compare them as sequences:</p>
     <span class="n">out</span><span class="o">.</span><span class="n">attrs</span> <span class="o">=</span> <span class="p">{}</span>
     <span class="k">return</span> <span class="n">out</span>
 
-<span class="n">big</span> <span class="o">=</span> <span class="n">tg</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;especiais&quot;</span><span class="p">,</span> <span class="s2">&quot;meta_especiais&quot;</span><span class="p">,</span> <span class="n">limit</span><span class="o">=</span><span class="mi">450</span><span class="p">,</span> <span class="n">page_size</span><span class="o">=</span><span class="mi">200</span><span class="p">)</span>
-<span class="n">small</span> <span class="o">=</span> <span class="n">tg</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;especiais&quot;</span><span class="p">,</span> <span class="s2">&quot;meta_especiais&quot;</span><span class="p">,</span> <span class="n">limit</span><span class="o">=</span><span class="mi">450</span><span class="p">,</span> <span class="n">page_size</span><span class="o">=</span><span class="mi">50</span><span class="p">)</span>
+<span class="n">big</span> <span class="o">=</span> <span class="n">tg</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"especiais"</span><span class="p">,</span> <span class="s2">"meta_especiais"</span><span class="p">,</span> <span class="n">limit</span><span class="o">=</span><span class="mi">450</span><span class="p">,</span> <span class="n">page_size</span><span class="o">=</span><span class="mi">200</span><span class="p">)</span>
+<span class="n">small</span> <span class="o">=</span> <span class="n">tg</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"especiais"</span><span class="p">,</span> <span class="s2">"meta_especiais"</span><span class="p">,</span> <span class="n">limit</span><span class="o">=</span><span class="mi">450</span><span class="p">,</span> <span class="n">page_size</span><span class="o">=</span><span class="mi">50</span><span class="p">)</span>
 
 <span class="n">strip</span><span class="p">(</span><span class="n">big</span><span class="p">)</span><span class="o">.</span><span class="n">equals</span><span class="p">(</span><span class="n">strip</span><span class="p">(</span><span class="n">small</span><span class="p">))</span>
 <span class="c1">#&gt; True</span>
@@ -796,15 +801,15 @@ failing test rather than as quietly wrong data.</p>
 <h2 id="caching">Caching<a class="headerlink" href="#caching" title="Permanent link">&para;</a></h2>
 <p>Responses are cached for an hour, so re-running a collection during a session
 costs nothing:</p>
-<div class="highlight"><pre><span></span><code><span class="n">first</span> <span class="o">=</span> <span class="n">tg</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;especiais&quot;</span><span class="p">,</span> <span class="s2">&quot;meta_especiais&quot;</span><span class="p">,</span> <span class="n">limit</span><span class="o">=</span><span class="mi">450</span><span class="p">)</span>
-<span class="n">again</span> <span class="o">=</span> <span class="n">tg</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;especiais&quot;</span><span class="p">,</span> <span class="s2">&quot;meta_especiais&quot;</span><span class="p">,</span> <span class="n">limit</span><span class="o">=</span><span class="mi">450</span><span class="p">)</span>
+<div class="highlight"><pre><span></span><code><span class="n">first</span> <span class="o">=</span> <span class="n">tg</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"especiais"</span><span class="p">,</span> <span class="s2">"meta_especiais"</span><span class="p">,</span> <span class="n">limit</span><span class="o">=</span><span class="mi">450</span><span class="p">)</span>
+<span class="n">again</span> <span class="o">=</span> <span class="n">tg</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"especiais"</span><span class="p">,</span> <span class="s2">"meta_especiais"</span><span class="p">,</span> <span class="n">limit</span><span class="o">=</span><span class="mi">450</span><span class="p">)</span>
 
-<span class="n">tg</span><span class="o">.</span><span class="n">metadata</span><span class="p">(</span><span class="n">again</span><span class="p">)[</span><span class="s2">&quot;cached&quot;</span><span class="p">]</span>
+<span class="n">tg</span><span class="o">.</span><span class="n">metadata</span><span class="p">(</span><span class="n">again</span><span class="p">)[</span><span class="s2">"cached"</span><span class="p">]</span>
 <span class="c1">#&gt; True</span>
 </code></pre></div>
 <p>The default cache lives in a temporary directory, so nothing is written outside
 the session unless you ask. For a long collection you will want it to survive:</p>
-<div class="highlight"><pre><span></span><code><span class="n">tg</span><span class="o">.</span><span class="n">cache_dir</span><span class="p">(</span><span class="s2">&quot;~/.cache/transferegovpy&quot;</span><span class="p">)</span>
+<div class="highlight"><pre><span></span><code><span class="n">tg</span><span class="o">.</span><span class="n">cache_dir</span><span class="p">(</span><span class="s2">"~/.cache/transferegovpy"</span><span class="p">)</span>
 </code></pre></div>
 <p>The APIs send no <code>ETag</code>, <code>Cache-Control</code> or <code>Last-Modified</code>, so HTTP caching
 would store nothing — this cache is the package's own. Use <code>updated_at()</code> to
@@ -814,16 +819,16 @@ decide when a cached copy is stale.</p>
 out, so an interrupted run does not start over:</p>
 <div class="highlight"><pre><span></span><code><span class="kn">import</span><span class="w"> </span><span class="nn">pathlib</span>
 
-<span class="n">total</span> <span class="o">=</span> <span class="n">tg</span><span class="o">.</span><span class="n">count</span><span class="p">(</span><span class="s2">&quot;fundoafundo&quot;</span><span class="p">,</span> <span class="s2">&quot;gestao_financeira_lancamentos&quot;</span><span class="p">)</span>
+<span class="n">total</span> <span class="o">=</span> <span class="n">tg</span><span class="o">.</span><span class="n">count</span><span class="p">(</span><span class="s2">"fundoafundo"</span><span class="p">,</span> <span class="s2">"gestao_financeira_lancamentos"</span><span class="p">)</span>
 <span class="n">slice_size</span> <span class="o">=</span> <span class="mi">20_000</span>
 
 <span class="k">for</span> <span class="n">start</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">total</span><span class="p">,</span> <span class="n">slice_size</span><span class="p">):</span>
-    <span class="n">path</span> <span class="o">=</span> <span class="n">pathlib</span><span class="o">.</span><span class="n">Path</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;lancamentos-</span><span class="si">{</span><span class="n">start</span><span class="si">:</span><span class="s2">08d</span><span class="si">}</span><span class="s2">.parquet&quot;</span><span class="p">)</span>
+    <span class="n">path</span> <span class="o">=</span> <span class="n">pathlib</span><span class="o">.</span><span class="n">Path</span><span class="p">(</span><span class="sa">f</span><span class="s2">"lancamentos-</span><span class="si">{</span><span class="n">start</span><span class="si">:</span><span class="s2">08d</span><span class="si">}</span><span class="s2">.parquet"</span><span class="p">)</span>
     <span class="k">if</span> <span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">():</span>
         <span class="k">continue</span>
 
     <span class="n">rows</span> <span class="o">=</span> <span class="n">tg</span><span class="o">.</span><span class="n">get</span><span class="p">(</span>
-        <span class="s2">&quot;fundoafundo&quot;</span><span class="p">,</span> <span class="s2">&quot;gestao_financeira_lancamentos&quot;</span><span class="p">,</span>
+        <span class="s2">"fundoafundo"</span><span class="p">,</span> <span class="s2">"gestao_financeira_lancamentos"</span><span class="p">,</span>
         <span class="n">limit</span><span class="o">=</span><span class="n">slice_size</span><span class="p">,</span> <span class="n">offset</span><span class="o">=</span><span class="n">start</span><span class="p">,</span>
     <span class="p">)</span>
     <span class="n">rows</span><span class="o">.</span><span class="n">to_parquet</span><span class="p">(</span><span class="n">path</span><span class="p">)</span>

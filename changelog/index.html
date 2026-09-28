@@ -493,22 +493,44 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#020" class="md-nav__link">
+  <a href="#030" class="md-nav__link">
     <span class="md-ellipsis">
       
-        0.2.0
+        0.3.0
       
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="0.2.0">
+    <nav class="md-nav" aria-label="0.3.0">
       <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#fixed" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Fixed
+      
+    </span>
+  </a>
+  
+</li>
         
           <li class="md-nav__item">
   <a href="#what-is-covered" class="md-nav__link">
     <span class="md-ellipsis">
       
         What is covered
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pagination" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Pagination
       
     </span>
   </a>
@@ -527,7 +549,57 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#pagination" class="md-nav__link">
+  <a href="#testing" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Testing
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#020" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        0.2.0
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="0.2.0">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#what-is-covered_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What is covered
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#filters_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Filters
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pagination_1" class="md-nav__link">
     <span class="md-ellipsis">
       
         Pagination
@@ -610,22 +682,44 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#020" class="md-nav__link">
+  <a href="#030" class="md-nav__link">
     <span class="md-ellipsis">
       
-        0.2.0
+        0.3.0
       
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="0.2.0">
+    <nav class="md-nav" aria-label="0.3.0">
       <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#fixed" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Fixed
+      
+    </span>
+  </a>
+  
+</li>
         
           <li class="md-nav__item">
   <a href="#what-is-covered" class="md-nav__link">
     <span class="md-ellipsis">
       
         What is covered
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pagination" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Pagination
       
     </span>
   </a>
@@ -644,7 +738,57 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#pagination" class="md-nav__link">
+  <a href="#testing" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Testing
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#020" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        0.2.0
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="0.2.0">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#what-is-covered_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What is covered
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#filters_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Filters
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pagination_1" class="md-nav__link">
     <span class="md-ellipsis">
       
         Pagination
@@ -710,13 +854,68 @@
 
 
 <h1 id="changelog">Changelog<a class="headerlink" href="#changelog" title="Permanent link">&para;</a></h1>
+<h2 id="030">0.3.0<a class="headerlink" href="#030" title="Permanent link">&para;</a></h2>
+<p>The services moved under 0.2.0. Checked by probing on 2026-09-28, and frozen
+from the same documents as the R sibling, transferegovr 0.2.0, whose schema
+this one matches table for table, column for column and in which parameters
+take lists.</p>
+<h3 id="fixed">Fixed<a class="headerlink" href="#fixed" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>Every <code>especiais</code> table answered 404.</strong> The service respelled all 20 paths
+  from <code>_</code> to <code>-</code> (<code>/planos_acao_especiais</code> is now <code>/planos-acao-especiais</code>).
+  Table names exposed by the package do not change; only the frozen path does.</li>
+</ul>
+<h3 id="what-is-covered">What is covered<a class="headerlink" href="#what-is-covered" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong><code>ted</code> is back</strong>: decentralized credit between federal bodies, now published
+  on the public host, 14 tables. Its 4 nested columns make up the 18 tables of
+  the government's data model. <code>ted()</code> returns alongside the other module
+  shortcuts. Table names differ from 0.1.x's, mostly by becoming plurals:
+  <code>evento</code> is now <code>eventos</code>, <code>trf</code> is <code>programacoes_financeiras_trf</code>.</li>
+<li><code>especiais</code> gains 3 tables (returned funds, management report analyses and
+  settlement documents) and <code>parcerias</code> 2 (<code>opp</code> and
+  <code>indicacao_beneficiario_emenda_parlamentar</code>), plus new columns and
+  parameters. Three columns of <code>proposta</code> changed from integers into
+  enumerations.</li>
+</ul>
+<p>74 tables, 1,045 columns and 1,059 parameters, against 55, 811 and 817.</p>
+<h3 id="pagination">Pagination<a class="headerlink" href="#pagination" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>The page limit is per module</strong>: 200 rows for <code>especiais</code> and <code>parcerias</code>,
+  1000 for <code>fundoafundo</code> and <code>ted</code>, read from each module's OpenAPI document.
+  <code>modules()</code> reports it as <code>max_page_size</code>, and <code>page_size</code> now defaults to
+  it, so large <code>fundoafundo</code> and <code>ted</code> tables need a fifth of the requests.</li>
+<li><code>MAX_PAGE</code> stays at 200, the page size every module accepts.</li>
+</ul>
+<h3 id="filters">Filters<a class="headerlink" href="#filters" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>Some identifier parameters take several values</strong>, sent as one
+  comma-separated value and matching any of them: 113 of them, in all four
+  modules. <code>params()</code> marks them as <code>multiple</code> and gives the most each accepts
+  in <code>max_values</code> — 100 in <code>especiais</code>, 200 elsewhere. The OpenAPI documents do
+  not say which parameters these are, and no naming rule does, so the schema
+  builder asks the service.</li>
+<li>A list is checked before it is sent: whole numbers only, no missing values,
+  duplicates dropped, and no more than the parameter accepts.</li>
+<li>Any other filter with several values is still refused. A one-element list is
+  now read as its single value.</li>
+</ul>
+<h3 id="testing">Testing<a class="headerlink" href="#testing" title="Permanent link">&para;</a></h3>
+<ul>
+<li><code>scripts/mutants.py</code> carries 34 deliberate defects across pagination, filter
+  validation, list encoding, parsing, transport and schema lookup, and the
+  suite kills all 34. The harness confirms it imports the mutated copy rather
+  than the editable install, and counts a hang as a kill.</li>
+<li>The live suite fails on a type warning as well as an error, and checks each
+  module's page limit and every list parameter against the service.</li>
+</ul>
 <h2 id="020">0.2.0<a class="headerlink" href="#020" title="Permanent link">&para;</a></h2>
 <p>The package now targets the public API host,
 <code>api-publica.transferegov.gestao.gov.br</code>. That host serves a different kind of
 service from the PostgREST one the package was built against, so this release
 rewrites the client rather than extending it. Code written against 0.1.x will
 need changing.</p>
-<h3 id="what-is-covered">What is covered<a class="headerlink" href="#what-is-covered" title="Permanent link">&para;</a></h3>
+<h3 id="what-is-covered_1">What is covered<a class="headerlink" href="#what-is-covered_1" title="Permanent link">&para;</a></h3>
 <ul>
 <li><strong><code>parcerias</code> is new</strong>: partnership management, 15 tables, including the
   partnerships and their proposals, budget commitments, payment orders and bank
@@ -735,7 +934,7 @@ need changing.</p>
 </ul>
 <p>55 tables and 811 columns in all, against 48 and 599 — the same totals the R
 sibling freezes from the same documents.</p>
-<h3 id="filters">Filters<a class="headerlink" href="#filters" title="Permanent link">&para;</a></h3>
+<h3 id="filters_1">Filters<a class="headerlink" href="#filters_1" title="Permanent link">&para;</a></h3>
 <ul>
 <li>Filters are now the endpoints' own typed query parameters rather than
   PostgREST operators. <code>params()</code> lists what each table accepts, with the
@@ -754,7 +953,7 @@ sibling freezes from the same documents.</p>
   occurrence of a repeated parameter and discards the rest without reporting
   it, so there is no way to express it.</li>
 </ul>
-<h3 id="pagination">Pagination<a class="headerlink" href="#pagination" title="Permanent link">&para;</a></h3>
+<h3 id="pagination_1">Pagination<a class="headerlink" href="#pagination_1" title="Permanent link">&para;</a></h3>
 <ul>
 <li>Pagination is by page number, and the cap is 200 rows per request rather than</li>
 <li><code>limit</code> and <code>offset</code> still count rows, including when the offset falls

@@ -785,8 +785,8 @@ government's platform for transfers to states, municipalities and civil
 society, from Python.</p>
 <h2 id="what-this-package-covers">What this package covers<a class="headerlink" href="#what-this-package-covers" title="Permanent link">&para;</a></h2>
 <p>The package targets the public API host,
-<code>api-publica.transferegov.gestao.gov.br</code>, which publishes three modules and
-<strong>55 tables</strong> in all:</p>
+<code>api-publica.transferegov.gestao.gov.br</code>, which publishes four modules and
+<strong>74 tables</strong> in all:</p>
 <table>
 <thead>
 <tr>
@@ -799,7 +799,7 @@ society, from Python.</p>
 <tr>
 <td><code>especiais</code></td>
 <td>Special transfers, created by Constitutional Amendment 105/2019 for individual parliamentary amendments</td>
-<td>20</td>
+<td>23</td>
 </tr>
 <tr>
 <td><code>fundoafundo</code></td>
@@ -809,26 +809,27 @@ society, from Python.</p>
 <tr>
 <td><code>parcerias</code></td>
 <td>Partnership management: programs, proposals, partnerships, their financial execution and bank statements</td>
-<td>15</td>
+<td>17</td>
+</tr>
+<tr>
+<td><code>ted</code></td>
+<td>Decentralized credit between federal bodies (<em>termo de execução descentralizada</em>): programs, action plans, credit notes and financial programming</td>
+<td>14</td>
 </tr>
 </tbody>
 </table>
-<p>Every table in the three published data models is reachable. Where the API
-folds a child table into its parent rather than giving it an endpoint of its
-own, it arrives as a column of lists — 5 of them in <code>fundoafundo</code>, 13 in
-<code>parcerias</code> — and <code>fields(nested=...)</code> describes what is inside.</p>
+<p>Every table in the published data models is reachable. Where the API folds a
+child table into its parent rather than giving it an endpoint of its own, it
+arrives as a column of lists — 5 of them in <code>fundoafundo</code>, 13 in <code>parcerias</code>,
+4 in <code>ted</code> — and <code>fields(nested=...)</code> describes what is inside.</p>
 <p>This is the Python sibling of
 <a href="https://strategicprojects.github.io/transferegovr/">transferegovr</a>; the two
 cover the same ground with the same semantics.</p>
 <h3 id="what-it-does-not-cover">What it does not cover<a class="headerlink" href="#what-it-does-not-cover" title="Permanent link">&para;</a></h3>
 <ul>
-<li><strong><code>ted</code></strong>, decentralized credit between federal bodies (<em>termo de execução
-  descentralizada</em>), 13 tables. It has not been published on the public API
-  host; it exists only on the older <code>api.transferegov.gestao.gov.br</code> service,
-  <strong>which the government is decommissioning on 2026-08-31</strong>. Unless TED is
-  republished before then, it stops being available as an API at all.</li>
-<li><strong>The older PostgREST endpoints</strong> for special and fund-to-fund transfers on
-  that same host, retired on the same date.</li>
+<li><strong>The older PostgREST endpoints</strong> at <code>api.transferegov.gestao.gov.br</code>, which
+  version 0.1.x of this package used. The government announced their
+  retirement for 2026-08-31.</li>
 <li><strong>The Discricionárias e Legais module (SICONV)</strong>, which has no API: it is
   published as CSV archives at
   <a href="https://api-publica.transferegov.gestao.gov.br/downloads">https://api-publica.transferegov.gestao.gov.br/downloads</a>. The government
@@ -838,29 +839,33 @@ cover the same ground with the same semantics.</p>
 <div class="highlight"><pre><span></span><code>pip<span class="w"> </span>install<span class="w"> </span>transferegovpy
 </code></pre></div>
 <p>A progress bar during long collections needs one extra:</p>
-<div class="highlight"><pre><span></span><code>pip<span class="w"> </span>install<span class="w"> </span><span class="s2">&quot;transferegovpy[progress]&quot;</span>
+<div class="highlight"><pre><span></span><code>pip<span class="w"> </span>install<span class="w"> </span><span class="s2">"transferegovpy[progress]"</span>
 </code></pre></div>
 <h2 id="getting-started">Getting started<a class="headerlink" href="#getting-started" title="Permanent link">&para;</a></h2>
 <div class="highlight"><pre><span></span><code><span class="kn">import</span><span class="w"> </span><span class="nn">transferegovpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">tg</span>
 
 <span class="n">tg</span><span class="o">.</span><span class="n">modules</span><span class="p">()</span>
-<span class="n">tg</span><span class="o">.</span><span class="n">tables</span><span class="p">(</span><span class="s2">&quot;parcerias&quot;</span><span class="p">)</span>
-<span class="n">tg</span><span class="o">.</span><span class="n">fields</span><span class="p">(</span><span class="s2">&quot;parcerias&quot;</span><span class="p">,</span> <span class="s2">&quot;proposta&quot;</span><span class="p">)</span>
-<span class="n">tg</span><span class="o">.</span><span class="n">params</span><span class="p">(</span><span class="s2">&quot;parcerias&quot;</span><span class="p">,</span> <span class="s2">&quot;proposta&quot;</span><span class="p">)</span>
+<span class="n">tg</span><span class="o">.</span><span class="n">tables</span><span class="p">(</span><span class="s2">"parcerias"</span><span class="p">)</span>
+<span class="n">tg</span><span class="o">.</span><span class="n">fields</span><span class="p">(</span><span class="s2">"parcerias"</span><span class="p">,</span> <span class="s2">"proposta"</span><span class="p">)</span>
+<span class="n">tg</span><span class="o">.</span><span class="n">params</span><span class="p">(</span><span class="s2">"parcerias"</span><span class="p">,</span> <span class="s2">"proposta"</span><span class="p">)</span>
 </code></pre></div>
 <p><code>get()</code> retrieves rows. Each filter is named after one of the endpoint's own
 query parameters, and parameters combine with AND:</p>
 <div class="highlight"><pre><span></span><code><span class="n">tg</span><span class="o">.</span><span class="n">get</span><span class="p">(</span>
-    <span class="s2">&quot;parcerias&quot;</span><span class="p">,</span> <span class="s2">&quot;proposta&quot;</span><span class="p">,</span>
-    <span class="n">sg_uf_recebedor</span><span class="o">=</span><span class="s2">&quot;PE&quot;</span><span class="p">,</span>
-    <span class="n">situacao_proposta</span><span class="o">=</span><span class="s2">&quot;Aprovada&quot;</span><span class="p">,</span>
+    <span class="s2">"parcerias"</span><span class="p">,</span> <span class="s2">"proposta"</span><span class="p">,</span>
+    <span class="n">sg_uf_recebedor</span><span class="o">=</span><span class="s2">"PE"</span><span class="p">,</span>
+    <span class="n">situacao_proposta</span><span class="o">=</span><span class="s2">"Aprovada"</span><span class="p">,</span>
     <span class="n">limit</span><span class="o">=</span><span class="mi">20</span><span class="p">,</span>
 <span class="p">)</span>
 </code></pre></div>
-<p>That is the whole filtering vocabulary. These services compare for equality and
-nothing else — no greater-than, no pattern match, no "is one of" — and they
-publish no ordering or column-selection parameter. <code>params()</code> lists what each
-table accepts, including the permitted values of the enumerated parameters.</p>
+<p>That is almost the whole filtering vocabulary. These services compare for
+equality — no greater-than, no pattern match — and publish no ordering or
+column-selection parameter. The one extension is on identifiers: 113 of them
+take several values and match any, which <code>params()</code> marks as <code>multiple</code>:</p>
+<div class="highlight"><pre><span></span><code><span class="n">tg</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"ted"</span><span class="p">,</span> <span class="s2">"planos_acao_metas"</span><span class="p">,</span> <span class="n">id_plano_acao</span><span class="o">=</span><span class="p">[</span><span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">])</span>
+</code></pre></div>
+<p><code>params()</code> lists what each table accepts, including the permitted values of the
+enumerated parameters.</p>
 <h2 id="a-typo-must-not-look-like-an-answer">A typo must not look like an answer<a class="headerlink" href="#a-typo-must-not-look-like-an-answer" title="Permanent link">&para;</a></h2>
 <p>These services <strong>ignore a query parameter they do not recognise</strong> and answer
 <code>200</code> with the whole table. Misspell <code>situacao_proposta</code> and you get every
@@ -868,37 +873,38 @@ proposal where the filter would have given the approved ones — a plausible
 number, quietly wrong.</p>
 <p>So every parameter name is checked against the packaged schema before a request
 goes out:</p>
-<div class="highlight"><pre><span></span><code><span class="n">tg</span><span class="o">.</span><span class="n">count</span><span class="p">(</span><span class="s2">&quot;parcerias&quot;</span><span class="p">,</span> <span class="s2">&quot;proposta&quot;</span><span class="p">,</span> <span class="n">in_situacao_proposta</span><span class="o">=</span><span class="s2">&quot;Aprovada&quot;</span><span class="p">)</span>
-<span class="c1">#&gt; FilterError: Unknown filter(s): &#39;in_situacao_proposta&#39;. The API ignores a</span>
+<div class="highlight"><pre><span></span><code><span class="n">tg</span><span class="o">.</span><span class="n">count</span><span class="p">(</span><span class="s2">"parcerias"</span><span class="p">,</span> <span class="s2">"proposta"</span><span class="p">,</span> <span class="n">in_situacao_proposta</span><span class="o">=</span><span class="s2">"Aprovada"</span><span class="p">)</span>
+<span class="c1">#&gt; FilterError: Unknown filter(s): 'in_situacao_proposta'. The API ignores a</span>
 <span class="c1">#&gt; parameter it does not recognise and returns every row, so this would look</span>
 <span class="c1">#&gt; like a query that matched nothing in particular. Did you mean</span>
-<span class="c1">#&gt; &#39;situacao_proposta&#39;? ...</span>
+<span class="c1">#&gt; 'situacao_proposta'? ...</span>
 </code></pre></div>
 <p>Enumerated values are checked the same way, before the round trip rather than
 after it.</p>
 <h2 id="size-first-download-second">Size first, download second<a class="headerlink" href="#size-first-download-second" title="Permanent link">&para;</a></h2>
-<p>The services return at most 200 rows per request, and these tables are not
-small. Ask before you fetch:</p>
-<div class="highlight"><pre><span></span><code><span class="n">tg</span><span class="o">.</span><span class="n">count</span><span class="p">(</span><span class="s2">&quot;especiais&quot;</span><span class="p">,</span> <span class="s2">&quot;meta_especiais&quot;</span><span class="p">)</span>
-<span class="c1">#&gt; 156060</span>
+<p>Each request returns one page — at most 200 rows in <code>especiais</code> and
+<code>parcerias</code>, 1000 in <code>fundoafundo</code> and <code>ted</code> — and these tables are not small.
+Ask before you fetch:</p>
+<div class="highlight"><pre><span></span><code><span class="n">tg</span><span class="o">.</span><span class="n">count</span><span class="p">(</span><span class="s2">"especiais"</span><span class="p">,</span> <span class="s2">"meta_especiais"</span><span class="p">)</span>
+<span class="c1">#&gt; 156193</span>
 </code></pre></div>
-<p><code>limit</code> counts rows, not pages. Anything above 200 is collected page by page,
-and the total collected is checked against what the API reported:</p>
+<p><code>limit</code> counts rows, not pages. Anything above one page is collected page by
+page, and the total collected is checked against what the API reported:</p>
 <div class="highlight"><pre><span></span><code><span class="kn">import</span><span class="w"> </span><span class="nn">math</span>
 
-<span class="n">metas</span> <span class="o">=</span> <span class="n">tg</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;especiais&quot;</span><span class="p">,</span> <span class="s2">&quot;meta_especiais&quot;</span><span class="p">,</span> <span class="n">limit</span><span class="o">=</span><span class="n">math</span><span class="o">.</span><span class="n">inf</span><span class="p">)</span>
+<span class="n">metas</span> <span class="o">=</span> <span class="n">tg</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"especiais"</span><span class="p">,</span> <span class="s2">"meta_especiais"</span><span class="p">,</span> <span class="n">limit</span><span class="o">=</span><span class="n">math</span><span class="o">.</span><span class="n">inf</span><span class="p">)</span>
 
-<span class="n">tg</span><span class="o">.</span><span class="n">metadata</span><span class="p">(</span><span class="n">metas</span><span class="p">)[</span><span class="s2">&quot;total_rows&quot;</span><span class="p">]</span>
-<span class="n">tg</span><span class="o">.</span><span class="n">metadata</span><span class="p">(</span><span class="n">metas</span><span class="p">)[</span><span class="s2">&quot;pages&quot;</span><span class="p">]</span>
+<span class="n">tg</span><span class="o">.</span><span class="n">metadata</span><span class="p">(</span><span class="n">metas</span><span class="p">)[</span><span class="s2">"total_rows"</span><span class="p">]</span>
+<span class="n">tg</span><span class="o">.</span><span class="n">metadata</span><span class="p">(</span><span class="n">metas</span><span class="p">)[</span><span class="s2">"pages"</span><span class="p">]</span>
 </code></pre></div>
 <h2 id="types">Types<a class="headerlink" href="#types" title="Permanent link">&para;</a></h2>
 <p>Columns are typed from the API's own schema rather than guessed, so a column
 that happens to be entirely null on one page does not change dtype on the next:</p>
-<div class="highlight"><pre><span></span><code><span class="n">proposals</span> <span class="o">=</span> <span class="n">tg</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;parcerias&quot;</span><span class="p">,</span> <span class="s2">&quot;proposta&quot;</span><span class="p">,</span> <span class="n">limit</span><span class="o">=</span><span class="mi">5</span><span class="p">)</span>
+<div class="highlight"><pre><span></span><code><span class="n">proposals</span> <span class="o">=</span> <span class="n">tg</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"parcerias"</span><span class="p">,</span> <span class="s2">"proposta"</span><span class="p">,</span> <span class="n">limit</span><span class="o">=</span><span class="mi">5</span><span class="p">)</span>
 
-<span class="n">proposals</span><span class="o">.</span><span class="n">dtypes</span><span class="p">[</span><span class="s2">&quot;dt_proposta&quot;</span><span class="p">]</span>
-<span class="c1">#&gt; dtype(&#39;&lt;M8[ns]&#39;)</span>
-<span class="n">proposals</span><span class="o">.</span><span class="n">dtypes</span><span class="p">[</span><span class="s2">&quot;id_proposta&quot;</span><span class="p">]</span>
+<span class="n">proposals</span><span class="o">.</span><span class="n">dtypes</span><span class="p">[</span><span class="s2">"dt_proposta"</span><span class="p">]</span>
+<span class="c1">#&gt; dtype('&lt;M8[ns]')</span>
+<span class="n">proposals</span><span class="o">.</span><span class="n">dtypes</span><span class="p">[</span><span class="s2">"id_proposta"</span><span class="p">]</span>
 <span class="c1">#&gt; Int64Dtype()</span>
 </code></pre></div>
 <p>Identifiers are a nullable 64-bit integer. This is the one deliberate
@@ -908,12 +914,12 @@ holds the full range <em>and</em> a missing value, so there is nothing to trade 
 <h2 id="freshness-and-caching">Freshness and caching<a class="headerlink" href="#freshness-and-caching" title="Permanent link">&para;</a></h2>
 <p>Each module reports when it was last loaded, which is the only freshness signal
 these APIs give — they send no <code>ETag</code>, <code>Cache-Control</code> or <code>Last-Modified</code>:</p>
-<div class="highlight"><pre><span></span><code><span class="n">tg</span><span class="o">.</span><span class="n">updated_at</span><span class="p">(</span><span class="s2">&quot;parcerias&quot;</span><span class="p">)</span>
-<span class="c1">#&gt; datetime.datetime(2026, 8, 4, 0, 0)</span>
+<div class="highlight"><pre><span></span><code><span class="n">tg</span><span class="o">.</span><span class="n">updated_at</span><span class="p">(</span><span class="s2">"parcerias"</span><span class="p">)</span>
+<span class="c1">#&gt; datetime.datetime(2026, 9, 28, 0, 0)</span>
 </code></pre></div>
 <p>Responses are cached for an hour in a temporary directory, so nothing is
 written outside the session unless you ask for it:</p>
-<div class="highlight"><pre><span></span><code><span class="n">tg</span><span class="o">.</span><span class="n">cache_dir</span><span class="p">(</span><span class="s2">&quot;~/.cache/transferegovpy&quot;</span><span class="p">)</span>
+<div class="highlight"><pre><span></span><code><span class="n">tg</span><span class="o">.</span><span class="n">cache_dir</span><span class="p">(</span><span class="s2">"~/.cache/transferegovpy"</span><span class="p">)</span>
 </code></pre></div>
 <p>or set <code>TRANSFEREGOVPY_CACHE_DIR</code> in the environment. <code>cache_clear()</code> empties
 it.</p>
@@ -926,6 +932,7 @@ and documentation are in English.</p>
 <li><a href="https://api-publica.transferegov.gestao.gov.br/especiais/docs">https://api-publica.transferegov.gestao.gov.br/especiais/docs</a></li>
 <li><a href="https://api-publica.transferegov.gestao.gov.br/fundoafundo/docs">https://api-publica.transferegov.gestao.gov.br/fundoafundo/docs</a></li>
 <li><a href="https://api-publica.transferegov.gestao.gov.br/parcerias/docs">https://api-publica.transferegov.gestao.gov.br/parcerias/docs</a></li>
+<li><a href="https://api-publica.transferegov.gestao.gov.br/ted/docs">https://api-publica.transferegov.gestao.gov.br/ted/docs</a></li>
 </ul>
 
 
