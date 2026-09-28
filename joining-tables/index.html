@@ -479,6 +479,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#ted" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ted
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#children-that-arrive-already-joined" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -641,6 +652,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#ted" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ted
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#children-that-arrive-already-joined" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -711,8 +733,15 @@ matches.</p>
                               │                 └──&lt; ordens_pagamentos_ordens_bancarias_especiais
                               ├──&lt; planos_acao_historico_especiais
                               ├──&lt; relatorios_gestao_especiais
+                              ├──&lt; devolucao_especiais
                               └──&lt; relatorios_gestao_novos_especiais
+                                       ├──&lt; relatorios_gestao_analise_especiais
+                                       └──&lt; relatorios_gestao_documento_liquidacao_especiais
 </code></pre></div>
+<p>The three tables published in September 2026 — returned funds and the two
+report tables under <code>relatorios_gestao_novos_especiais</code> — are not in the
+government's data model yet. Their links were checked against the data
+instead: every sampled identifier found its parent.</p>
 <p>Note where the beneficiary lives. The action plan carries only
 <code>id_beneficiario</code>; the name, CNPJ and state are in <code>beneficiarios_especiais</code>.
 There is no way to filter action plans by state directly — you filter the
@@ -749,6 +778,25 @@ it leaves from.</p>
    │            ├──&lt; cronograma_desembolso
    │            └──&lt; analise_proposta
    └──&lt; beneficiario_emenda_parlamentar
+             └──&lt; indicacao_beneficiario_emenda_parlamentar
+</code></pre></div>
+<p>One link changes name on the way: <code>indicacao_beneficiario_emenda_parlamentar</code>
+refers to its parent through <code>id_beneficiario_emenda_parlamentar</code>, which the
+parent calls <code>id_beneficiario_emenda_parlamentar_programa</code>. The same
+nominations also arrive nested in the parent, as <code>indicacoes_beneficiario</code>.</p>
+<p><code>opp</code> holds payment orders issued from a partnership's bank account — Pix
+transfers, tax payments, bills — with the payee, the amount and whether it went
+through. It is new and small: 137 rows between May and September 2026, 21 of
+them described as tests (<code>"teste boleto"</code>, <code>"teste Pix cpf"</code>), so filter those
+out before adding anything up. It hangs off the bank account, but not by the
+account's own key:
+it carries <code>id_conta_gf</code>, which matches the column of the same name in
+<code>parceria_conta</code>, not <code>id_parceria_conta</code>. The difference matters because the
+wrong join half-works: checked against the whole of <code>parceria_conta</code>, all of
+<code>opp</code>'s accounts match on <code>id_conta_gf</code>, one row each, while two of the three
+also coincide numerically with some unrelated <code>id_parceria_conta</code>. <code>opp</code> is in
+no published data model yet, so the data is the only evidence.</p>
+<div class="highlight"><pre><span></span><code>parceria_conta ──&lt; opp        (on id_conta_gf)
 </code></pre></div>
 <div class="highlight"><pre><span></span><code><span class="n">propostas</span> <span class="o">=</span> <span class="n">tg</span><span class="o">.</span><span class="n">get</span><span class="p">(</span>
     <span class="s2">"parcerias"</span><span class="p">,</span> <span class="s2">"proposta"</span><span class="p">,</span>
@@ -761,12 +809,48 @@ it leaves from.</p>
 <span class="n">contas</span> <span class="o">=</span> <span class="n">tg</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"parcerias"</span><span class="p">,</span> <span class="s2">"parceria_conta"</span><span class="p">,</span> <span class="n">limit</span><span class="o">=</span><span class="n">math</span><span class="o">.</span><span class="n">inf</span><span class="p">)</span>
 <span class="n">contas</span> <span class="o">=</span> <span class="n">contas</span><span class="p">[</span><span class="n">contas</span><span class="p">[</span><span class="s2">"id_parceria"</span><span class="p">]</span><span class="o">.</span><span class="n">isin</span><span class="p">(</span><span class="n">parcerias</span><span class="p">[</span><span class="s2">"id_parceria"</span><span class="p">])]</span>
 </code></pre></div>
-<p><code>extrato_bancario</code> holds over a million rows, so join into it rather than
-collecting it whole — filter by the account you care about:</p>
-<div class="highlight"><pre><span></span><code><span class="n">extratos</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">concat</span><span class="p">(</span>
-    <span class="n">tg</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"parcerias"</span><span class="p">,</span> <span class="s2">"extrato_bancario"</span><span class="p">,</span> <span class="n">id_parceria_conta</span><span class="o">=</span><span class="nb">int</span><span class="p">(</span><span class="n">i</span><span class="p">),</span> <span class="n">limit</span><span class="o">=</span><span class="n">math</span><span class="o">.</span><span class="n">inf</span><span class="p">)</span>
-    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">contas</span><span class="p">[</span><span class="s2">"id_parceria_conta"</span><span class="p">]</span>
+<p><code>extrato_bancario</code> holds 1.4 million rows, so join into it rather than
+collecting it whole — filter by the accounts you care about.
+<code>id_parceria_conta</code> takes up to 200 of them per request, so send them in
+groups:</p>
+<div class="highlight"><pre><span></span><code><span class="n">ids</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">contas</span><span class="p">[</span><span class="s2">"id_parceria_conta"</span><span class="p">])</span>
+
+<span class="n">extratos</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">concat</span><span class="p">(</span>
+    <span class="n">tg</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"parcerias"</span><span class="p">,</span> <span class="s2">"extrato_bancario"</span><span class="p">,</span> <span class="n">id_parceria_conta</span><span class="o">=</span><span class="n">ids</span><span class="p">[</span><span class="n">i</span><span class="p">:</span><span class="n">i</span> <span class="o">+</span> <span class="mi">200</span><span class="p">],</span>
+           <span class="n">limit</span><span class="o">=</span><span class="n">math</span><span class="o">.</span><span class="n">inf</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">ids</span><span class="p">),</span> <span class="mi">200</span><span class="p">)</span>
 <span class="p">)</span>
+</code></pre></div>
+<p><code>params()</code> says which identifiers take a list, and how many values each
+accepts, in its <code>multiple</code> and <code>max_values</code> columns.</p>
+<h2 id="ted">ted<a class="headerlink" href="#ted" title="Permanent link">&para;</a></h2>
+<p>Decentralized credit hangs off the action plan too, and the action plan off the
+program. Every link below is declared in the government's data model, and each
+was also checked against the data: of 200 identifiers sampled per link, every
+one found exactly one parent row.</p>
+<div class="highlight"><pre><span></span><code>programas ──&lt; planos_acao ──&lt; termos_execucao
+   │              │
+   │              ├──&lt; notas_credito ──&lt; eventos
+   │              ├──&lt; programacoes_financeiras ──&lt; programacoes_financeiras_trf
+   │              ├──&lt; planos_acao_metas ──&lt; planos_acao_metas_etapas
+   │              ├──&lt; planos_trabalho_cronogramas
+   │              ├──&lt; planos_acao_analises
+   │              └──&lt; planos_acao_pareceres
+   ├──&lt; programas_acoes_orcamentarias
+   └──&lt; programas_beneficiarios
+</code></pre></div>
+<p>The join columns are <code>id_programa</code>, <code>id_plano_acao</code>, <code>id_nota</code>,
+<code>id_programacao</code> and <code>id_meta</code>, each under the same name on both sides.</p>
+<p>The identifiers here all take lists, so following the money from a set of plans
+to the budget events of their credit notes is two requests per 200 plans rather
+than one per plan:</p>
+<div class="highlight"><pre><span></span><code><span class="n">planos</span> <span class="o">=</span> <span class="n">tg</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"ted"</span><span class="p">,</span> <span class="s2">"planos_acao"</span><span class="p">,</span> <span class="n">limit</span><span class="o">=</span><span class="mi">200</span><span class="p">)</span>
+
+<span class="n">notas</span> <span class="o">=</span> <span class="n">tg</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"ted"</span><span class="p">,</span> <span class="s2">"notas_credito"</span><span class="p">,</span>
+               <span class="n">id_plano_acao</span><span class="o">=</span><span class="nb">list</span><span class="p">(</span><span class="n">planos</span><span class="p">[</span><span class="s2">"id_plano_acao"</span><span class="p">]),</span> <span class="n">limit</span><span class="o">=</span><span class="n">math</span><span class="o">.</span><span class="n">inf</span><span class="p">)</span>
+
+<span class="n">eventos</span> <span class="o">=</span> <span class="n">tg</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"ted"</span><span class="p">,</span> <span class="s2">"eventos"</span><span class="p">,</span>
+                 <span class="n">id_nota</span><span class="o">=</span><span class="nb">list</span><span class="p">(</span><span class="n">notas</span><span class="p">[</span><span class="s2">"id_nota"</span><span class="p">]</span><span class="o">.</span><span class="n">unique</span><span class="p">()[:</span><span class="mi">200</span><span class="p">]),</span> <span class="n">limit</span><span class="o">=</span><span class="n">math</span><span class="o">.</span><span class="n">inf</span><span class="p">)</span>
 </code></pre></div>
 <h2 id="children-that-arrive-already-joined">Children that arrive already joined<a class="headerlink" href="#children-that-arrive-already-joined" title="Permanent link">&para;</a></h2>
 <p>Several child tables have no endpoint. The API folds them into the parent as an
@@ -781,9 +865,13 @@ array, which means the join is already done and you only have to explode.</p>
 <code>item_proposta</code>.</p>
 <p>In <code>fundoafundo</code>: <code>programa_acao_orcamentaria</code> and <code>programa_natureza_despesa</code>
 on <code>programas</code>, <code>categorias_despesa_lancamento</code> on
-<code>gestao_financeira_lancamentos</code>, and <code>categorias_despesa_subtransacao</code> on
-<code>gestao_financeira_subtransacoes</code>.</p>
-<p><code>especiais</code> has none: all twenty of its tables have endpoints.</p>
+<code>gestao_financeira_lancamentos</code>, <code>categorias_despesa_subtransacao</code> on
+<code>gestao_financeira_subtransacoes</code>, and <code>saldo_final_dado_bancario</code> on
+<code>planos_acao_dados_bancarios</code>.</p>
+<p>In <code>ted</code>: <code>esfera_orcamentaria_evento</code> and <code>natureza_despesa_evento</code> on
+<code>eventos</code>, and <code>formalizacao_termo_execucao</code> and <code>link_termo_execucao</code> on
+<code>termos_execucao</code>.</p>
+<p><code>especiais</code> has none: all twenty-three of its tables have endpoints.</p>
 <p>To flatten one:</p>
 <div class="highlight"><pre><span></span><code><span class="n">programas</span> <span class="o">=</span> <span class="n">tg</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"parcerias"</span><span class="p">,</span> <span class="s2">"programa"</span><span class="p">,</span> <span class="n">limit</span><span class="o">=</span><span class="n">math</span><span class="o">.</span><span class="n">inf</span><span class="p">)</span>
 
