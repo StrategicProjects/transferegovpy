@@ -40,8 +40,16 @@ programas_especiais ──< planos_acao_especiais >── beneficiarios_especiai
                               │                 └──< ordens_pagamentos_ordens_bancarias_especiais
                               ├──< planos_acao_historico_especiais
                               ├──< relatorios_gestao_especiais
+                              ├──< devolucao_especiais
                               └──< relatorios_gestao_novos_especiais
+                                       ├──< relatorios_gestao_analise_especiais
+                                       └──< relatorios_gestao_documento_liquidacao_especiais
 ```
+
+The three tables published in September 2026 — returned funds and the two
+report tables under `relatorios_gestao_novos_especiais` — are not in the
+government's data model yet. Their links were checked against the data
+instead: every sampled identifier found its parent.
 
 Note where the beneficiary lives. The action plan carries only
 `id_beneficiario`; the name, CNPJ and state are in `beneficiarios_especiais`.
@@ -90,6 +98,29 @@ programa ──< proposta ──< parceria ──< parceria_conta ──< extrat
    │            ├──< cronograma_desembolso
    │            └──< analise_proposta
    └──< beneficiario_emenda_parlamentar
+             └──< indicacao_beneficiario_emenda_parlamentar
+```
+
+One link changes name on the way: `indicacao_beneficiario_emenda_parlamentar`
+refers to its parent through `id_beneficiario_emenda_parlamentar`, which the
+parent calls `id_beneficiario_emenda_parlamentar_programa`. The same
+nominations also arrive nested in the parent, as `indicacoes_beneficiario`.
+
+`opp` holds payment orders issued from a partnership's bank account — Pix
+transfers, tax payments, bills — with the payee, the amount and whether it went
+through. It is new and small: 137 rows between May and September 2026, 21 of
+them described as tests (`"teste boleto"`, `"teste Pix cpf"`), so filter those
+out before adding anything up. It hangs off the bank account, but not by the
+account's own key:
+it carries `id_conta_gf`, which matches the column of the same name in
+`parceria_conta`, not `id_parceria_conta`. The difference matters because the
+wrong join half-works: checked against the whole of `parceria_conta`, all of
+`opp`'s accounts match on `id_conta_gf`, one row each, while two of the three
+also coincide numerically with some unrelated `id_parceria_conta`. `opp` is in
+no published data model yet, so the data is the only evidence.
+
+```
+parceria_conta ──< opp        (on id_conta_gf)
 ```
 
 ```python
@@ -105,14 +136,59 @@ contas = tg.get("parcerias", "parceria_conta", limit=math.inf)
 contas = contas[contas["id_parceria"].isin(parcerias["id_parceria"])]
 ```
 
-`extrato_bancario` holds over a million rows, so join into it rather than
-collecting it whole — filter by the account you care about:
+`extrato_bancario` holds 1.4 million rows, so join into it rather than
+collecting it whole — filter by the accounts you care about.
+`id_parceria_conta` takes up to 200 of them per request, so send them in
+groups:
 
 ```python
+ids = list(contas["id_parceria_conta"])
+
 extratos = pd.concat(
-    tg.get("parcerias", "extrato_bancario", id_parceria_conta=int(i), limit=math.inf)
-    for i in contas["id_parceria_conta"]
+    tg.get("parcerias", "extrato_bancario", id_parceria_conta=ids[i:i + 200],
+           limit=math.inf)
+    for i in range(0, len(ids), 200)
 )
+```
+
+`params()` says which identifiers take a list, and how many values each
+accepts, in its `multiple` and `max_values` columns.
+
+## ted
+
+Decentralized credit hangs off the action plan too, and the action plan off the
+program. Every link below is declared in the government's data model, and each
+was also checked against the data: of 200 identifiers sampled per link, every
+one found exactly one parent row.
+
+```
+programas ──< planos_acao ──< termos_execucao
+   │              │
+   │              ├──< notas_credito ──< eventos
+   │              ├──< programacoes_financeiras ──< programacoes_financeiras_trf
+   │              ├──< planos_acao_metas ──< planos_acao_metas_etapas
+   │              ├──< planos_trabalho_cronogramas
+   │              ├──< planos_acao_analises
+   │              └──< planos_acao_pareceres
+   ├──< programas_acoes_orcamentarias
+   └──< programas_beneficiarios
+```
+
+The join columns are `id_programa`, `id_plano_acao`, `id_nota`,
+`id_programacao` and `id_meta`, each under the same name on both sides.
+
+The identifiers here all take lists, so following the money from a set of plans
+to the budget events of their credit notes is two requests per 200 plans rather
+than one per plan:
+
+```python
+planos = tg.get("ted", "planos_acao", limit=200)
+
+notas = tg.get("ted", "notas_credito",
+               id_plano_acao=list(planos["id_plano_acao"]), limit=math.inf)
+
+eventos = tg.get("ted", "eventos",
+                 id_nota=list(notas["id_nota"].unique()[:200]), limit=math.inf)
 ```
 
 ## Children that arrive already joined
@@ -131,10 +207,15 @@ In `parcerias`: `ufs_habilitadas`, `programa_atende_a`, `categorias_despesa`,
 
 In `fundoafundo`: `programa_acao_orcamentaria` and `programa_natureza_despesa`
 on `programas`, `categorias_despesa_lancamento` on
-`gestao_financeira_lancamentos`, and `categorias_despesa_subtransacao` on
-`gestao_financeira_subtransacoes`.
+`gestao_financeira_lancamentos`, `categorias_despesa_subtransacao` on
+`gestao_financeira_subtransacoes`, and `saldo_final_dado_bancario` on
+`planos_acao_dados_bancarios`.
 
-`especiais` has none: all twenty of its tables have endpoints.
+In `ted`: `esfera_orcamentaria_evento` and `natureza_despesa_evento` on
+`eventos`, and `formalizacao_termo_execucao` and `link_termo_execucao` on
+`termos_execucao`.
+
+`especiais` has none: all twenty-three of its tables have endpoints.
 
 To flatten one:
 

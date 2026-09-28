@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+* The joining guide covers `ted`, the five tables published in September 2026,
+  and joining through list filters. Every link it draws was checked against the
+  data, including the ones the government's data models do not document yet.
+
 ## 0.3.0
 
 The services moved under 0.2.0. Checked by probing on 2026-09-28, and frozen
