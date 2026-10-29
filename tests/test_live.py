@@ -32,8 +32,8 @@ def live_settings():
 def raw(module, table, params):
     """A request with its status left for the test to read.
 
-    Built and throttled by the package's own client: 113 unthrottled requests
-    in a row drew transient failures from the service.
+    Built and throttled by the package's own client: a hundred-plus
+    unthrottled requests in a row drew transient failures from the service.
     """
     url = _client._prepare(
         f"{module}/{_schema.table_path(module, table)}", params, _client.base_url(module)
@@ -71,10 +71,16 @@ def test_every_table_in_the_frozen_schema_still_answers():
     failures = []
 
     for _, row in tg.tables().iterrows():
+        # discricionarias/propostas_canceladas holds a row the service cannot
+        # serialize (its 71st, on 2026-10-29): any page containing it is a
+        # 500. Fetched in pages of 50 so the table is still checked. If this
+        # starts failing with a 500, the poison row moved into the first
+        # fifty.
+        page_size = 50 if row["table"] == "propostas_canceladas" else None
         with warnings.catch_warnings(record=True) as caught:
             warnings.simplefilter("always")
             try:
-                tg.get(row["module"], row["table"], limit=50)
+                tg.get(row["module"], row["table"], limit=50, page_size=page_size)
             except Exception as error:  # noqa: BLE001 - collecting every failure
                 failures.append(f"{row['module']}/{row['table']}: {error}")
         for warning in caught:
@@ -96,15 +102,22 @@ def test_each_modules_frozen_page_limit_is_the_one_its_service_enforces():
 def test_the_parameters_frozen_as_lists_are_the_ones_that_take_lists():
     # The OpenAPI documents do not say which parameters take a list, so the
     # schema builder asked the service. Ask again: a list-taking parameter
-    # rejects a non-integer with a message about comma-separated integers.
+    # rejects a non-integer, most with a 400 naming comma-separated integers,
+    # while `discricionarias/propostas*` crash on it with a bare 500. Either
+    # way, a frozen list parameter answering a non-integer with 200 means it
+    # stopped being one.
     wrong = []
     for module in _schema.module_names():
         for table in _schema.table_names(module):
             for name, param in _schema.table_params(module, table).items():
                 if not param["multiple"]:
                     continue
-                body = raw(module, table, [(name, "x")]).text
-                if "separados por v" not in body:
+                response = raw(module, table, [(name, "x")])
+                rejected = response.status_code == 500 or (
+                    response.status_code == 400
+                    and "separados por v" in response.text
+                )
+                if not rejected:
                     wrong.append(f"{module}/{table} {name}")
 
     assert wrong == []
@@ -115,16 +128,27 @@ def test_a_list_means_any_of_its_values_up_to_the_frozen_limit():
     other = tg.count("ted", "planos_acao_metas", id_plano_acao=4)
     assert tg.count("ted", "planos_acao_metas", id_plano_acao=[3, 4]) == one + other
 
-    for module, table, name in (
-        ("especiais", "devolucao_especiais", "id_devolucao"),
-        ("ted", "planos_acao", "id_plano_acao"),
+    # The same arithmetic on the module whose endpoints validate lists with a
+    # crash rather than a 400: "is one of" has to hold there too.
+    first = tg.count("discricionarias", "propostas", id_proposta=73142)
+    second = tg.count("discricionarias", "propostas", id_proposta=1056231)
+    union = tg.count("discricionarias", "propostas", id_proposta=[73142, 1056231])
+    assert union == first + second
+
+    # What "past the limit" answers is not uniform: a 400 naming the limit on
+    # most endpoints, the bare 500 on `discricionarias/propostas`.
+    for module, table, name, past in (
+        ("especiais", "devolucao_especiais", "id_devolucao", 400),
+        ("ted", "planos_acao", "id_plano_acao", 400),
+        ("discricionarias", "todos_programas", "id_programa", 400),
+        ("discricionarias", "propostas", "id_proposta", 500),
     ):
         limit = _schema.table_params(module, table)[name]["max_values"]
         statuses = [
             raw(module, table, [(name, ",".join(str(i) for i in range(1, n + 1)))]).status_code
             for n in (limit, limit + 1)
         ]
-        assert statuses == [200, 400], f"{module}/{table} {name}"
+        assert statuses == [200, past], f"{module}/{table} {name}"
 
 
 def test_pages_of_1000_hold_the_same_rows_as_pages_of_200():
@@ -140,10 +164,11 @@ def test_the_frozen_columns_match_what_the_services_send():
 
     for _, row in tg.tables().iterrows():
         # Only names are compared here; the masked columns' warning is covered
-        # above.
+        # above. The small page dodges the poison row in propostas_canceladas,
+        # which a default-size page would include.
         with warnings.catch_warnings():
             warnings.simplefilter("ignore")
-            frame = tg.get(row["module"], row["table"], limit=1)
+            frame = tg.get(row["module"], row["table"], limit=1, page_size=50)
         if len(frame) == 0:
             continue
 
@@ -183,6 +208,16 @@ def test_the_order_is_stable_deep_into_a_large_table():
     )
 
     assert list(first["id_meta"]) == list(again["id_meta"])
+
+
+def test_discricionarias_pages_like_the_others():
+    # Order stability is what makes pagination safe, and it is a per-service
+    # property, so the newest module is checked like the ones before it.
+    big = tg.get("discricionarias", "propostas", limit=400, page_size=200)
+    small = tg.get("discricionarias", "propostas", limit=400, page_size=100, use_cache=False)
+
+    assert len(big) == 400
+    assert list(big["id_proposta"]) == list(small["id_proposta"])
 
 
 def test_an_offset_lands_on_the_row_it_names():
@@ -233,10 +268,13 @@ def test_the_service_really_does_ignore_an_unknown_parameter():
     try:
         total = tg.count("parcerias", "proposta")
         bogus = tg.count("parcerias", "proposta", in_situacao_proposta="Aprovada")
+        newest = tg.count("discricionarias", "proponentes")
+        newest_bogus = tg.count("discricionarias", "proponentes", xx_nao_existe="x")
     finally:
         tg.configure(validate=True)
 
     assert bogus == total
+    assert newest_bogus == newest
 
 
 # Freshness -------------------------------------------------------------------
@@ -269,16 +307,16 @@ def test_a_nested_column_arrives_as_lists_matching_its_sub_schema():
 
 def test_the_schema_matches_the_documented_totals():
     # transferegovr freezes the same documents and must agree.
-    assert len(tg.tables()) == 74
-    assert tg.tables()["columns"].sum() == 1045
-    assert tg.tables()["params"].sum() == 1059
+    assert len(tg.tables()) == 86
+    assert tg.tables()["columns"].sum() == 1300
+    assert tg.tables()["params"].sum() == 1308
     lists = sum(
         p["multiple"]
         for m in _schema.module_names()
         for t in _schema.table_names(m)
         for p in _schema.table_params(m, t).values()
     )
-    assert lists == 113
+    assert lists == 141
 
 
 def test_inf_collects_a_whole_small_table():

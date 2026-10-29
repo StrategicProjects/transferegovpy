@@ -17,9 +17,82 @@ parameters, and nothing else — no primary keys, no foreign keys. `fields()`
 therefore cannot tell you what joins to what.
 
 The relationships below come from the data models the government publishes
-alongside the APIs. The convention is regular enough to follow without them: a
-column named `id_x` in table B refers to the row of table X whose own `id_x`
-matches.
+alongside the APIs, and, where a model does not document a link (all of
+`discricionarias`, and the newest tables elsewhere), from checking the data
+itself. The convention is regular enough to follow either way: a column named
+`id_x` in table B refers to the row of table X whose own `id_x` matches.
+
+## discricionarias
+
+Discretionary and legal transfers have two clusters: the proposal and its
+execution, and the Novo PAC selection process, bridged by
+`proposta_formalizacao_pac`. Every link below was checked against the data by
+sampling identifiers and looking up their parents.
+
+```
+proponentes ──< propostas ──< meta_crono_fisico
+                   │
+                   ├──< plano_aplicado_detalhado
+                   ├──< consorcios
+                   └──< justificativas_proposta
+
+todos_programas ──< propostas_selecao_pac ──< perguntas_respostas_selecao_pac
+       │                    │
+       │                    └──< proposta_formalizacao_pac >── propostas
+       └──< apoiadores_emendas_programas
+
+propostas_canceladas
+```
+
+The join columns are `id_proposta`, `id_proponente`, `id_programa` and
+`id_proposta_selecao_pac`, each under the same name on both sides.
+
+Three things to know before joining here:
+
+* **A cancelled proposal leaves `propostas`.** The two tables have the same
+  shape and *disjoint* identifiers — of fifty sampled cancelled proposals,
+  none was still in `propostas`. A complete history needs both.
+* **`todos_programas` is a view with a join already baked in**: one row per
+  program *and* proposal (1.26 million rows, but a 200-row page holds only a
+  handful of distinct `id_programa`). It is also the only bridge from a
+  proposal to its program — `propostas` itself carries no `id_programa` —
+  so deduplicate it before joining the other way.
+* **`propostas_canceladas` cannot be paged from the start at full size.** As
+  of October 2026 it holds a row the service cannot serialize (its 71st), and
+  any page containing that row is an HTTP 500. A smaller `page_size`, an
+  `offset` past it, or a filter that excludes it gets around the defect.
+
+The PAC trail runs proponent → selection → formalization → proposal, and
+every identifier on it takes a list, so each hop is one request per 200
+values:
+
+```python
+pernambuco = tg.get("discricionarias", "proponentes",
+                    uf_proponente="PE", limit=math.inf)
+
+selecao = tg.get(
+    "discricionarias", "propostas_selecao_pac",
+    id_proponente=list(pernambuco["id_proponente"].head(200)),
+    limit=math.inf,
+)
+
+formalizacao = tg.get(
+    "discricionarias", "proposta_formalizacao_pac",
+    id_proposta_selecao_pac=list(selecao["id_proposta_selecao_pac"].head(200)),
+    limit=math.inf,
+)
+
+propostas = tg.get(
+    "discricionarias", "propostas",
+    id_proposta=list(formalizacao["id_proposta"].head(200)),
+    limit=math.inf,
+)
+```
+
+Not every formalization resolves: in a sample of one hundred, one
+`id_proposta` found no row in `propostas` — see "Joins that do not fully
+resolve" below. `justificativas_proposta` was empty when this was written, so
+its link is drawn from its column names alone.
 
 ## especiais
 
@@ -214,6 +287,9 @@ on `programas`, `categorias_despesa_lancamento` on
 In `ted`: `esfera_orcamentaria_evento` and `natureza_despesa_evento` on
 `eventos`, and `formalizacao_termo_execucao` and `link_termo_execucao` on
 `termos_execucao`.
+
+In `discricionarias`: `programas_propostas` on `todos_programas` and
+`proponente_especifico_todos` on `proponentes`.
 
 `especiais` has none: all twenty-three of its tables have endpoints.
 

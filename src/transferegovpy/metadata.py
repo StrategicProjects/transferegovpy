@@ -47,7 +47,7 @@ def tables(module: str | None = None, counts: bool = False) -> pd.DataFrame:
         Add a ``rows`` column with the number of rows each table currently
         holds. This is the only part of this function that needs a network
         connection: it makes one request per table, so ``tables(counts=True)``
-        with no module makes seventy-four. Responses are cached.
+        with no module makes eighty-six. Responses are cached.
 
     Returns
     -------

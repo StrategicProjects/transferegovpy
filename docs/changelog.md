@@ -1,7 +1,33 @@
 # Changelog
 
-## Unreleased
+## 0.4.0
 
+* **`discricionarias` is new**: discretionary and legal transfers, the module
+  that absorbed SICONV, published on the API host in October 2026 as the
+  first of the four stages the government has announced. 12 tables and about
+  11.8 million rows — more than the other four modules together — covering
+  proposals (1.16 million, plus 45,607 cancelled), proponents, programs, the
+  physical schedule, the detailed application of funds (5.05 million rows,
+  the largest table in these APIs), and the Novo PAC selection process.
+  `discricionarias()` joins the other module shortcuts, and `"siconv"` and
+  `"discricionarias_e_legais"` resolve as aliases. 86 tables, 1,300 columns
+  and 1,308 parameters in all, against 74, 1,045 and 1,059, matching the R
+  sibling field for field.
+* The new module's endpoints enforce their page limit (200) and their
+  list-value limit (200) like the others, ignore unknown parameters like the
+  others, and their row order was verified to be stable across page sizes,
+  across repeated calls and at depth, which is what makes pagination safe.
+  Three upstream defects to know about: on `propostas` and
+  `propostas-canceladas` a malformed list filter answers HTTP 500 rather
+  than the 400 the other endpoints use (client-side validation means a
+  well-formed query never hits this); `apoiadores-emendas-programas` answers
+  500 to its `valor_repasse_proposta_apoiadores_emendas` filter for every
+  value probed; and `propostas_canceladas` holds at least one row the
+  service cannot serialize — as of 2026-10-29, any page containing its 71st
+  row is a 500, so fetching that table from the start fails at the default
+  page size. A smaller `page_size`, an `offset` past the row, or a filter
+  that excludes it are the workarounds until it is fixed upstream.
+* `ted()` appears on the reference page; it had been missing since 0.3.0.
 * The joining guide covers `ted`, the five tables published in September 2026,
   and joining through list filters. Every link it draws was checked against the
   data, including the ones the government's data models do not document yet.

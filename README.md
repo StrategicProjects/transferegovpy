@@ -12,11 +12,12 @@ society, from Python.
 ## What this package covers
 
 The package targets the public API host,
-`api-publica.transferegov.gestao.gov.br`, which publishes four modules and
-**74 tables** in all:
+`api-publica.transferegov.gestao.gov.br`, which publishes five modules and
+**86 tables** in all:
 
 | Module | Covers | Tables |
 |---|---|---|
+| `discricionarias` | Discretionary and legal transfers, the module that absorbed SICONV: proposals, proponents, programs, physical schedule, detailed application of funds, and the PAC selection process | 12 |
 | `especiais` | Special transfers, created by Constitutional Amendment 105/2019 for individual parliamentary amendments | 23 |
 | `fundoafundo` | Fund-to-fund transfers, from federal funds directly to state, district and municipal funds | 20 |
 | `parcerias` | Partnership management: programs, proposals, partnerships, their financial execution and bank statements | 17 |
@@ -24,8 +25,9 @@ The package targets the public API host,
 
 Every table in the published data models is reachable. Where the API folds a
 child table into its parent rather than giving it an endpoint of its own, it
-arrives as a column of lists — 5 of them in `fundoafundo`, 13 in `parcerias`,
-4 in `ted` — and `fields(nested=...)` describes what is inside.
+arrives as a column of lists — 2 of them in `discricionarias`, 5 in
+`fundoafundo`, 13 in `parcerias`, 4 in `ted` — and `fields(nested=...)`
+describes what is inside.
 
 This is the Python sibling of
 [transferegovr](https://strategicprojects.github.io/transferegovr/); the two
@@ -36,10 +38,11 @@ cover the same ground with the same semantics.
 * **The older PostgREST endpoints** at `api.transferegov.gestao.gov.br`, which
   version 0.1.x of this package used. The government announced their
   retirement for 2026-08-31.
-* **The Discricionárias e Legais module (SICONV)**, which has no API: it is
-  published as CSV archives at
-  <https://api-publica.transferegov.gestao.gov.br/downloads>. The government
-  has announced APIs for it in four stages between July 2026 and October 2027.
+* **The rest of the Discricionárias e Legais data.** The `discricionarias`
+  API published in October 2026 is the first of four stages the government
+  has announced through October 2027; instruments, financial execution and
+  the works module are still only CSV archives at
+  <https://api-publica.transferegov.gestao.gov.br/downloads>.
 
 ## Installation
 
@@ -78,7 +81,7 @@ tg.get(
 
 That is almost the whole filtering vocabulary. These services compare for
 equality — no greater-than, no pattern match — and publish no ordering or
-column-selection parameter. The one extension is on identifiers: 113 of them
+column-selection parameter. The one extension is on identifiers: 141 of them
 take several values and match any, which `params()` marks as `multiple`:
 
 ```python
@@ -111,8 +114,9 @@ after it.
 
 ## Size first, download second
 
-Each request returns one page — at most 200 rows in `especiais` and
-`parcerias`, 1000 in `fundoafundo` and `ted` — and these tables are not small.
+Each request returns one page — at most 200 rows in `discricionarias`,
+`especiais` and `parcerias`, 1000 in `fundoafundo` and `ted` — and these
+tables are not small.
 Ask before you fetch:
 
 ```python
@@ -179,6 +183,7 @@ and documentation are in English.
 
 ## Official documentation
 
+* <https://api-publica.transferegov.gestao.gov.br/discricionarias/docs>
 * <https://api-publica.transferegov.gestao.gov.br/especiais/docs>
 * <https://api-publica.transferegov.gestao.gov.br/fundoafundo/docs>
 * <https://api-publica.transferegov.gestao.gov.br/parcerias/docs>

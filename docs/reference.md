@@ -8,11 +8,15 @@
 
 ::: transferegovpy.updated_at
 
+::: transferegovpy.discricionarias
+
 ::: transferegovpy.especiais
 
 ::: transferegovpy.fundo_a_fundo
 
 ::: transferegovpy.parcerias
+
+::: transferegovpy.ted
 
 ::: transferegovpy.metadata
 

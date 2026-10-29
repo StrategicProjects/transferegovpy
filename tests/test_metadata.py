@@ -13,12 +13,12 @@ from transferegovpy._errors import SchemaError
 from .conftest import add_body, envelope
 
 
-def test_the_frozen_schema_covers_four_modules_and_seventy_four_tables():
+def test_the_frozen_schema_covers_five_modules_and_eighty_six_tables():
     # The same totals the R sibling freezes from the same documents.
-    assert len(tg.modules()) == 4
-    assert len(tg.tables()) == 74
-    assert tg.tables()["columns"].sum() == 1045
-    assert tg.tables()["params"].sum() == 1059
+    assert len(tg.modules()) == 5
+    assert len(tg.tables()) == 86
+    assert tg.tables()["columns"].sum() == 1300
+    assert tg.tables()["params"].sum() == 1308
 
 
 def test_module_names_aliases_case_and_punctuation_all_resolve():
@@ -32,6 +32,9 @@ def test_module_names_aliases_case_and_punctuation_all_resolve():
     assert _schema.match_module("fundo a fundo") == "fundoafundo"
     assert _schema.match_module("fund_to_fund") == "fundoafundo"
     assert _schema.match_module(" especiais ") == "especiais"
+    assert _schema.match_module("discricionarias") == "discricionarias"
+    assert _schema.match_module("discricionarias e legais") == "discricionarias"
+    assert _schema.match_module("siconv") == "discricionarias"
 
 
 def test_the_old_module_name_resolves_to_the_module_that_replaced_it():
@@ -119,15 +122,21 @@ def test_modules_reports_each_modules_own_base_url():
     frame = tg.modules()
 
     assert frame["url"].str.startswith("https://api-publica.").all()
-    assert frame["tables"].sum() == 74
+    assert frame["tables"].sum() == 86
 
 
 def test_each_module_reports_the_page_limit_its_service_declares():
-    # Not one number: especiais and parcerias answer 422 above 200 rows a
-    # page, fundoafundo and ted above 1000.
+    # Not one number: discricionarias, especiais and parcerias answer 422
+    # above 200 rows a page, fundoafundo and ted above 1000.
     limits = dict(zip(tg.modules()["module"], tg.modules()["max_page_size"]))
 
-    assert limits == {"especiais": 200, "fundoafundo": 1000, "parcerias": 200, "ted": 1000}
+    assert limits == {
+        "discricionarias": 200,
+        "especiais": 200,
+        "fundoafundo": 1000,
+        "parcerias": 200,
+        "ted": 1000,
+    }
     assert tg.MAX_PAGE == 200
 
 

@@ -17,6 +17,7 @@ __all__ = [
     "count",
     "updated_at",
     "metadata",
+    "discricionarias",
     "especiais",
     "fundo_a_fundo",
     "parcerias",
@@ -71,8 +72,9 @@ def get(
     Pagination
     ----------
     Each request returns one page of at most the module's page limit -- 200
-    rows for ``especiais`` and ``parcerias``, 1000 for ``fundoafundo`` and
-    ``ted`` -- so a larger ``limit`` is met by fetching successive pages.
+    rows for ``discricionarias``, ``especiais`` and ``parcerias``, 1000 for
+    ``fundoafundo`` and ``ted`` -- so a larger ``limit`` is met by fetching
+    successive pages.
     ``limit`` counts rows, not pages; use ``math.inf`` for every matching row.
     Several tables hold hundreds of thousands of rows, so check the size with
     :func:`count` first.
@@ -86,8 +88,9 @@ def get(
     Parameters
     ----------
     module:
-        ``"especiais"``, ``"fundoafundo"``, ``"parcerias"`` or ``"ted"``. Aliases such as
-        ``"fundo_a_fundo"`` are accepted.
+        ``"discricionarias"``, ``"especiais"``, ``"fundoafundo"``,
+        ``"parcerias"`` or ``"ted"``. Aliases such as ``"fundo_a_fundo"`` are
+        accepted.
     table:
         A table name from :func:`~transferegovpy.tables`.
     limit:
@@ -161,8 +164,8 @@ def count(
     """Count the rows a query matches without retrieving them.
 
     Worth doing before a large :func:`get`: the biggest table in these APIs
-    holds over 1.3 million rows, which at 200 rows a request is more than six
-    thousand requests.
+    holds over five million rows, which at 200 rows a request is more than
+    twenty-five thousand requests.
     """
     module = _schema.match_module(module)
     table = _schema.match_table(module, table)
@@ -212,6 +215,11 @@ def metadata(frame: pd.DataFrame) -> dict | None:
 
 
 # Module shortcuts ------------------------------------------------------------
+
+
+def discricionarias(table: str, **kwargs) -> pd.DataFrame:
+    """:func:`get` with the module fixed to ``"discricionarias"``."""
+    return get("discricionarias", table, **kwargs)
 
 
 def especiais(table: str, **kwargs) -> pd.DataFrame:

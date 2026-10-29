@@ -1,10 +1,10 @@
 """Access the 'TransfereGov' open data APIs from Python.
 
 TransfereGov is the Brazilian federal government's platform for transfers to
-states, municipalities and civil society. This package covers the four modules
-published at ``api-publica.transferegov.gestao.gov.br`` — special transfers,
-fund-to-fund transfers, partnership management and decentralized credit —
-seventy-four tables between them::
+states, municipalities and civil society. This package covers the five modules
+published at ``api-publica.transferegov.gestao.gov.br`` — discretionary and
+legal transfers, special transfers, fund-to-fund transfers, partnership
+management and decentralized credit — eighty-six tables between them::
 
     import transferegovpy as tg
 
@@ -29,7 +29,7 @@ Portuguese because they belong to the API.
 
 from __future__ import annotations
 
-__version__ = "0.3.0"
+__version__ = "0.4.0"
 
 from ._cache import cache_clear, cache_dir
 from ._cache import enabled as cache_enabled
@@ -52,6 +52,7 @@ from .metadata import fields, modules, schema_date, tables
 from .query import (
     MAX_PAGE,
     count,
+    discricionarias,
     especiais,
     fundo_a_fundo,
     get,
@@ -67,6 +68,7 @@ __all__ = [
     "get",
     "count",
     "updated_at",
+    "discricionarias",
     "especiais",
     "fundo_a_fundo",
     "parcerias",

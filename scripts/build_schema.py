@@ -35,7 +35,7 @@ import urllib.parse
 import urllib.request
 
 BASE = "https://api-publica.transferegov.gestao.gov.br"
-MODULES = ("especiais", "fundoafundo", "parcerias", "ted")
+MODULES = ("discricionarias", "especiais", "fundoafundo", "parcerias", "ted")
 
 OUT = (
     pathlib.Path(__file__).resolve().parent.parent
@@ -186,16 +186,24 @@ def table_name(path: str) -> str:
 #
 # Some parameters take a comma-separated list and match any of its values -- an
 # "is one of" -- and the rest take a single value. The OpenAPI documents do not
-# say which: both are declared as a plain string. Nor does the name: 113
-# parameters take a list, two of them not named `id_*`, while several `id_*`
-# strings do not. So it is asked of the service, which is how every other
-# behaviour frozen here was established.
+# say which: both are declared as a plain string. Nor does the name: 141
+# parameters take a list, several of them not named `id_*`, while several
+# `id_*` strings do not. So it is asked of the service, which is how every
+# other behaviour frozen here was established.
 #
 # A list-taking parameter rejects a non-integer with a 400 whose message says it
 # wants "números inteiros separados por vírgula"; any other parameter treats
-# "x" as an ordinary value. Sent more values than it allows, it answers with
-# the limit -- 100 in `especiais`, 200 elsewhere -- so that is read per
-# parameter too. About 700 requests, a few minutes.
+# "x" as an ordinary value (and a parameter typed integer or number is
+# validated by FastAPI itself, 422, so it is never a candidate). Sent more
+# values than it allows, a list parameter answers with the limit -- 100 in
+# `especiais`, 200 elsewhere -- so that is read per parameter too.
+#
+# `discricionarias` complicates both halves. Its `/propostas` and
+# `/propostas-canceladas` crash on a non-integer -- a bare 500 "Erro Interno
+# Inesperado" -- instead of answering the 400, and past the value limit they
+# answer the same 500 with no limit in it. So there a 500 is confirmed as
+# "takes a list" by sending one, and the limit is read from the status by
+# bisection. Over a thousand requests in all, a few minutes.
 
 LIST_MARKER = "separados por v"
 LIMIT_PATTERN = re.compile(r"máximo de valores possíveis.* é ([0-9]+)")
@@ -229,16 +237,71 @@ def probe_lists(module: str, path: str, params: dict) -> None:
             continue
 
         status, body = probe(module, path, name, "x")
-        if status != 400 or LIST_MARKER not in body:
+        takes_list = status == 400 and LIST_MARKER in body
+
+        if not takes_list and status == 500:
+            # A 500 alone does not say "list": it says the endpoint crashed
+            # instead of validating. Only a two-value list coming back 200
+            # does. When even that fails, a single value tells the rest
+            # apart: accepted, this is an ordinary one-value parameter that
+            # crashes on a non-number instead of rejecting it; refused as
+            # well, the filter is broken upstream for every value probed, and
+            # it is frozen as single-valued so the client at least names the
+            # parameter when the 500 comes back.
+            status, _ = probe(module, path, name, "1,2")
+            if status == 200:
+                takes_list = True
+            else:
+                status, _ = probe(module, path, name, "1")
+                if status != 200:
+                    print(
+                        f"  {module}/{path} {name}: a 500 for every value probed",
+                        file=sys.stderr,
+                    )
+
+        if not takes_list:
             continue
 
-        status, body = probe(module, path, name, ",".join(str(i) for i in range(1, 1002)))
-        limit = LIMIT_PATTERN.search(body)
-        if not limit:
-            raise SystemExit(f"{module}/{path} {name} takes a list but did not report its limit")
-
         param["multiple"] = True
-        param["max_values"] = int(limit.group(1))
+        param["max_values"] = probe_limit(module, path, name)
+
+
+def probe_limit(module: str, path: str, name: str) -> int:
+    """How many values one list parameter accepts.
+
+    Most endpoints name the limit in a 400; the ones that answer a bare 500
+    get it read from the status instead, with the limit every other parameter
+    has reported tried first so that the bisection only runs when an endpoint
+    deviates.
+    """
+
+    def accepts(n: int) -> bool | int:
+        status, body = probe(module, path, name, ",".join(str(i) for i in range(1, n + 1)))
+        if status == 200:
+            return True
+        limit = LIMIT_PATTERN.search(body)
+        return int(limit.group(1)) if limit else False
+
+    first = accepts(1001)
+    if first is True:
+        raise SystemExit(f"{module}/{path} {name} accepted 1001 values; it has no limit to freeze")
+    if first is not False:
+        return first
+
+    if accepts(200) is True and accepts(201) is False:
+        return 200
+
+    lower, upper = 1, 1001  # a single value always works; 1001 just failed
+    while upper - lower > 1:
+        middle = (lower + upper) // 2
+        outcome = accepts(middle)
+        if outcome is True:
+            lower = middle
+        elif outcome is False:
+            upper = middle
+        else:
+            return outcome
+    return lower
 
 
 def max_page_size(spec: dict, paths: list, module: str) -> int:
@@ -342,8 +405,8 @@ def main() -> None:
         )
     print(f"total: {tables} tables, {columns} columns, {params} parameters")
 
-    if len(schema) != 4 or tables != 74:
-        raise SystemExit(f"expected 4 modules and 74 tables, got {len(schema)} and {tables}")
+    if len(schema) != 5 or tables != 86:
+        raise SystemExit(f"expected 5 modules and 86 tables, got {len(schema)} and {tables}")
 
     bundle = {
         "built_at": datetime.date.today().isoformat(),
@@ -352,12 +415,20 @@ def main() -> None:
         # own limit is its `max_page_size`.
         "max_page": min(m["max_page_size"] for m in schema.values()),
         "labels": {
+            "discricionarias": "Discretionary and legal transfers",
             "especiais": "Special transfers",
             "fundoafundo": "Fund-to-fund transfers",
             "parcerias": "Partnerships",
             "ted": "Decentralized credit",
         },
         "aliases": {
+            "discricionarias_e_legais": "discricionarias",
+            "transferencias_discricionarias": "discricionarias",
+            "discretionary": "discricionarias",
+            "discretionary_and_legal": "discricionarias",
+            # The system these transfers lived in before Transferegov absorbed
+            # it; its CSV dumps are published under this name to this day.
+            "siconv": "discricionarias",
             # The module was called this on the retired PostgREST host.
             "transferenciasespeciais": "especiais",
             "transferencias_especiais": "especiais",

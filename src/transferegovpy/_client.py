@@ -1,6 +1,6 @@
 """HTTP transport: throttling, retries, error reporting and pagination state.
 
-The four modules are FastAPI services. A table query is a GET on the endpoint,
+The five modules are FastAPI services. A table query is a GET on the endpoint,
 filters are typed query parameters, and the answer is an envelope carrying the
 rows under ``data`` alongside the pagination state.
 """
