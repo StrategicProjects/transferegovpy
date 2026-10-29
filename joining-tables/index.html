@@ -23,7 +23,7 @@
       
       
       <link rel="icon" href="../assets/images/favicon.png">
-      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.8.0">
     
     
       
@@ -31,10 +31,10 @@
       
     
     
-      <link rel="stylesheet" href="../assets/stylesheets/main.ec1eaa64.min.css">
+      <link rel="stylesheet" href="../assets/stylesheets/main.57a0d79d.min.css">
       
         
-        <link rel="stylesheet" href="../assets/stylesheets/palette.ab4e12ef.min.css">
+        <link rel="stylesheet" href="../assets/stylesheets/palette.fb2fffe2.min.css">
       
       
 
@@ -446,6 +446,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#discricionarias" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        discricionarias
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#especiais" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -619,6 +630,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#discricionarias" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        discricionarias
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#especiais" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -714,9 +736,73 @@ together.</p>
 parameters, and nothing else — no primary keys, no foreign keys. <code>fields()</code>
 therefore cannot tell you what joins to what.</p>
 <p>The relationships below come from the data models the government publishes
-alongside the APIs. The convention is regular enough to follow without them: a
-column named <code>id_x</code> in table B refers to the row of table X whose own <code>id_x</code>
-matches.</p>
+alongside the APIs, and, where a model does not document a link (all of
+<code>discricionarias</code>, and the newest tables elsewhere), from checking the data
+itself. The convention is regular enough to follow either way: a column named
+<code>id_x</code> in table B refers to the row of table X whose own <code>id_x</code> matches.</p>
+<h2 id="discricionarias">discricionarias<a class="headerlink" href="#discricionarias" title="Permanent link">&para;</a></h2>
+<p>Discretionary and legal transfers have two clusters: the proposal and its
+execution, and the Novo PAC selection process, bridged by
+<code>proposta_formalizacao_pac</code>. Every link below was checked against the data by
+sampling identifiers and looking up their parents.</p>
+<div class="highlight"><pre><span></span><code>proponentes ──&lt; propostas ──&lt; meta_crono_fisico
+                   │
+                   ├──&lt; plano_aplicado_detalhado
+                   ├──&lt; consorcios
+                   └──&lt; justificativas_proposta
+
+todos_programas ──&lt; propostas_selecao_pac ──&lt; perguntas_respostas_selecao_pac
+       │                    │
+       │                    └──&lt; proposta_formalizacao_pac &gt;── propostas
+       └──&lt; apoiadores_emendas_programas
+
+propostas_canceladas
+</code></pre></div>
+<p>The join columns are <code>id_proposta</code>, <code>id_proponente</code>, <code>id_programa</code> and
+<code>id_proposta_selecao_pac</code>, each under the same name on both sides.</p>
+<p>Three things to know before joining here:</p>
+<ul>
+<li><strong>A cancelled proposal leaves <code>propostas</code>.</strong> The two tables have the same
+  shape and <em>disjoint</em> identifiers — of fifty sampled cancelled proposals,
+  none was still in <code>propostas</code>. A complete history needs both.</li>
+<li><strong><code>todos_programas</code> is a view with a join already baked in</strong>: one row per
+  program <em>and</em> proposal (1.26 million rows, but a 200-row page holds only a
+  handful of distinct <code>id_programa</code>). It is also the only bridge from a
+  proposal to its program — <code>propostas</code> itself carries no <code>id_programa</code> —
+  so deduplicate it before joining the other way.</li>
+<li><strong><code>propostas_canceladas</code> cannot be paged from the start at full size.</strong> As
+  of October 2026 it holds a row the service cannot serialize (its 71st), and
+  any page containing that row is an HTTP 500. A smaller <code>page_size</code>, an
+  <code>offset</code> past it, or a filter that excludes it gets around the defect.</li>
+</ul>
+<p>The PAC trail runs proponent → selection → formalization → proposal, and
+every identifier on it takes a list, so each hop is one request per 200
+values:</p>
+<div class="highlight"><pre><span></span><code><span class="n">pernambuco</span> <span class="o">=</span> <span class="n">tg</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"discricionarias"</span><span class="p">,</span> <span class="s2">"proponentes"</span><span class="p">,</span>
+                    <span class="n">uf_proponente</span><span class="o">=</span><span class="s2">"PE"</span><span class="p">,</span> <span class="n">limit</span><span class="o">=</span><span class="n">math</span><span class="o">.</span><span class="n">inf</span><span class="p">)</span>
+
+<span class="n">selecao</span> <span class="o">=</span> <span class="n">tg</span><span class="o">.</span><span class="n">get</span><span class="p">(</span>
+    <span class="s2">"discricionarias"</span><span class="p">,</span> <span class="s2">"propostas_selecao_pac"</span><span class="p">,</span>
+    <span class="n">id_proponente</span><span class="o">=</span><span class="nb">list</span><span class="p">(</span><span class="n">pernambuco</span><span class="p">[</span><span class="s2">"id_proponente"</span><span class="p">]</span><span class="o">.</span><span class="n">head</span><span class="p">(</span><span class="mi">200</span><span class="p">)),</span>
+    <span class="n">limit</span><span class="o">=</span><span class="n">math</span><span class="o">.</span><span class="n">inf</span><span class="p">,</span>
+<span class="p">)</span>
+
+<span class="n">formalizacao</span> <span class="o">=</span> <span class="n">tg</span><span class="o">.</span><span class="n">get</span><span class="p">(</span>
+    <span class="s2">"discricionarias"</span><span class="p">,</span> <span class="s2">"proposta_formalizacao_pac"</span><span class="p">,</span>
+    <span class="n">id_proposta_selecao_pac</span><span class="o">=</span><span class="nb">list</span><span class="p">(</span><span class="n">selecao</span><span class="p">[</span><span class="s2">"id_proposta_selecao_pac"</span><span class="p">]</span><span class="o">.</span><span class="n">head</span><span class="p">(</span><span class="mi">200</span><span class="p">)),</span>
+    <span class="n">limit</span><span class="o">=</span><span class="n">math</span><span class="o">.</span><span class="n">inf</span><span class="p">,</span>
+<span class="p">)</span>
+
+<span class="n">propostas</span> <span class="o">=</span> <span class="n">tg</span><span class="o">.</span><span class="n">get</span><span class="p">(</span>
+    <span class="s2">"discricionarias"</span><span class="p">,</span> <span class="s2">"propostas"</span><span class="p">,</span>
+    <span class="n">id_proposta</span><span class="o">=</span><span class="nb">list</span><span class="p">(</span><span class="n">formalizacao</span><span class="p">[</span><span class="s2">"id_proposta"</span><span class="p">]</span><span class="o">.</span><span class="n">head</span><span class="p">(</span><span class="mi">200</span><span class="p">)),</span>
+    <span class="n">limit</span><span class="o">=</span><span class="n">math</span><span class="o">.</span><span class="n">inf</span><span class="p">,</span>
+<span class="p">)</span>
+</code></pre></div>
+<p>Not every formalization resolves: in a sample of one hundred, one
+<code>id_proposta</code> found no row in <code>propostas</code> — see "Joins that do not fully
+resolve" below. <code>justificativas_proposta</code> was empty when this was written, so
+its link is drawn from its column names alone.</p>
 <h2 id="especiais">especiais<a class="headerlink" href="#especiais" title="Permanent link">&para;</a></h2>
 <p>Everything hangs off the action plan, <code>planos_acao_especiais</code>.</p>
 <div class="highlight"><pre><span></span><code>programas_especiais ──&lt; planos_acao_especiais &gt;── beneficiarios_especiais
@@ -871,6 +957,8 @@ on <code>programas</code>, <code>categorias_despesa_lancamento</code> on
 <p>In <code>ted</code>: <code>esfera_orcamentaria_evento</code> and <code>natureza_despesa_evento</code> on
 <code>eventos</code>, and <code>formalizacao_termo_execucao</code> and <code>link_termo_execucao</code> on
 <code>termos_execucao</code>.</p>
+<p>In <code>discricionarias</code>: <code>programas_propostas</code> on <code>todos_programas</code> and
+<code>proponente_especifico_todos</code> on <code>proponentes</code>.</p>
 <p><code>especiais</code> has none: all twenty-three of its tables have endpoints.</p>
 <p>To flatten one:</p>
 <div class="highlight"><pre><span></span><code><span class="n">programas</span> <span class="o">=</span> <span class="n">tg</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"parcerias"</span><span class="p">,</span> <span class="s2">"programa"</span><span class="p">,</span> <span class="n">limit</span><span class="o">=</span><span class="n">math</span><span class="o">.</span><span class="n">inf</span><span class="p">)</span>
@@ -950,10 +1038,10 @@ answer.</p>
     
       
       
-      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": ["navigation.sections", "navigation.top", "content.code.copy", "search.suggest"], "search": "../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": ["navigation.sections", "navigation.top", "content.code.copy", "search.suggest"], "search": "../assets/javascripts/workers/search.a7633da7.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
     
     
-      <script src="../assets/javascripts/bundle.d7400e89.min.js"></script>
+      <script src="../assets/javascripts/bundle.c21346df.min.js"></script>
       
     
   </body>

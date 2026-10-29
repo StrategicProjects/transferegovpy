@@ -21,7 +21,7 @@
       
       
       <link rel="icon" href="assets/images/favicon.png">
-      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.8.0">
     
     
       
@@ -29,10 +29,10 @@
       
     
     
-      <link rel="stylesheet" href="assets/stylesheets/main.ec1eaa64.min.css">
+      <link rel="stylesheet" href="assets/stylesheets/main.57a0d79d.min.css">
       
         
-        <link rel="stylesheet" href="assets/stylesheets/palette.ab4e12ef.min.css">
+        <link rel="stylesheet" href="assets/stylesheets/palette.fb2fffe2.min.css">
       
       
 
@@ -785,8 +785,8 @@ government's platform for transfers to states, municipalities and civil
 society, from Python.</p>
 <h2 id="what-this-package-covers">What this package covers<a class="headerlink" href="#what-this-package-covers" title="Permanent link">&para;</a></h2>
 <p>The package targets the public API host,
-<code>api-publica.transferegov.gestao.gov.br</code>, which publishes four modules and
-<strong>74 tables</strong> in all:</p>
+<code>api-publica.transferegov.gestao.gov.br</code>, which publishes five modules and
+<strong>86 tables</strong> in all:</p>
 <table>
 <thead>
 <tr>
@@ -796,6 +796,11 @@ society, from Python.</p>
 </tr>
 </thead>
 <tbody>
+<tr>
+<td><code>discricionarias</code></td>
+<td>Discretionary and legal transfers, the module that absorbed SICONV: proposals, proponents, programs, physical schedule, detailed application of funds, and the PAC selection process</td>
+<td>12</td>
+</tr>
 <tr>
 <td><code>especiais</code></td>
 <td>Special transfers, created by Constitutional Amendment 105/2019 for individual parliamentary amendments</td>
@@ -820,8 +825,9 @@ society, from Python.</p>
 </table>
 <p>Every table in the published data models is reachable. Where the API folds a
 child table into its parent rather than giving it an endpoint of its own, it
-arrives as a column of lists — 5 of them in <code>fundoafundo</code>, 13 in <code>parcerias</code>,
-4 in <code>ted</code> — and <code>fields(nested=...)</code> describes what is inside.</p>
+arrives as a column of lists — 2 of them in <code>discricionarias</code>, 5 in
+<code>fundoafundo</code>, 13 in <code>parcerias</code>, 4 in <code>ted</code> — and <code>fields(nested=...)</code>
+describes what is inside.</p>
 <p>This is the Python sibling of
 <a href="https://strategicprojects.github.io/transferegovr/">transferegovr</a>; the two
 cover the same ground with the same semantics.</p>
@@ -830,10 +836,11 @@ cover the same ground with the same semantics.</p>
 <li><strong>The older PostgREST endpoints</strong> at <code>api.transferegov.gestao.gov.br</code>, which
   version 0.1.x of this package used. The government announced their
   retirement for 2026-08-31.</li>
-<li><strong>The Discricionárias e Legais module (SICONV)</strong>, which has no API: it is
-  published as CSV archives at
-  <a href="https://api-publica.transferegov.gestao.gov.br/downloads">https://api-publica.transferegov.gestao.gov.br/downloads</a>. The government
-  has announced APIs for it in four stages between July 2026 and October 2027.</li>
+<li><strong>The rest of the Discricionárias e Legais data.</strong> The <code>discricionarias</code>
+  API published in October 2026 is the first of four stages the government
+  has announced through October 2027; instruments, financial execution and
+  the works module are still only CSV archives at
+  <a href="https://api-publica.transferegov.gestao.gov.br/downloads">https://api-publica.transferegov.gestao.gov.br/downloads</a>.</li>
 </ul>
 <h2 id="installation">Installation<a class="headerlink" href="#installation" title="Permanent link">&para;</a></h2>
 <div class="highlight"><pre><span></span><code>pip<span class="w"> </span>install<span class="w"> </span>transferegovpy
@@ -860,7 +867,7 @@ query parameters, and parameters combine with AND:</p>
 </code></pre></div>
 <p>That is almost the whole filtering vocabulary. These services compare for
 equality — no greater-than, no pattern match — and publish no ordering or
-column-selection parameter. The one extension is on identifiers: 113 of them
+column-selection parameter. The one extension is on identifiers: 141 of them
 take several values and match any, which <code>params()</code> marks as <code>multiple</code>:</p>
 <div class="highlight"><pre><span></span><code><span class="n">tg</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"ted"</span><span class="p">,</span> <span class="s2">"planos_acao_metas"</span><span class="p">,</span> <span class="n">id_plano_acao</span><span class="o">=</span><span class="p">[</span><span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">])</span>
 </code></pre></div>
@@ -882,8 +889,9 @@ goes out:</p>
 <p>Enumerated values are checked the same way, before the round trip rather than
 after it.</p>
 <h2 id="size-first-download-second">Size first, download second<a class="headerlink" href="#size-first-download-second" title="Permanent link">&para;</a></h2>
-<p>Each request returns one page — at most 200 rows in <code>especiais</code> and
-<code>parcerias</code>, 1000 in <code>fundoafundo</code> and <code>ted</code> — and these tables are not small.
+<p>Each request returns one page — at most 200 rows in <code>discricionarias</code>,
+<code>especiais</code> and <code>parcerias</code>, 1000 in <code>fundoafundo</code> and <code>ted</code> — and these
+tables are not small.
 Ask before you fetch:</p>
 <div class="highlight"><pre><span></span><code><span class="n">tg</span><span class="o">.</span><span class="n">count</span><span class="p">(</span><span class="s2">"especiais"</span><span class="p">,</span> <span class="s2">"meta_especiais"</span><span class="p">)</span>
 <span class="c1">#&gt; 156193</span>
@@ -929,6 +937,7 @@ API and are left as the government publishes them. The package's own functions
 and documentation are in English.</p>
 <h2 id="official-documentation">Official documentation<a class="headerlink" href="#official-documentation" title="Permanent link">&para;</a></h2>
 <ul>
+<li><a href="https://api-publica.transferegov.gestao.gov.br/discricionarias/docs">https://api-publica.transferegov.gestao.gov.br/discricionarias/docs</a></li>
 <li><a href="https://api-publica.transferegov.gestao.gov.br/especiais/docs">https://api-publica.transferegov.gestao.gov.br/especiais/docs</a></li>
 <li><a href="https://api-publica.transferegov.gestao.gov.br/fundoafundo/docs">https://api-publica.transferegov.gestao.gov.br/fundoafundo/docs</a></li>
 <li><a href="https://api-publica.transferegov.gestao.gov.br/parcerias/docs">https://api-publica.transferegov.gestao.gov.br/parcerias/docs</a></li>
@@ -989,10 +998,10 @@ and documentation are in English.</p>
     
       
       
-      <script id="__config" type="application/json">{"annotate": null, "base": ".", "features": ["navigation.sections", "navigation.top", "content.code.copy", "search.suggest"], "search": "assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+      <script id="__config" type="application/json">{"annotate": null, "base": ".", "features": ["navigation.sections", "navigation.top", "content.code.copy", "search.suggest"], "search": "assets/javascripts/workers/search.a7633da7.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
     
     
-      <script src="assets/javascripts/bundle.d7400e89.min.js"></script>
+      <script src="assets/javascripts/bundle.c21346df.min.js"></script>
       
     
   </body>
