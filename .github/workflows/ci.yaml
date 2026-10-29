@@ -14,17 +14,16 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, macos-latest, windows-latest]
-        python: ["3.9", "3.13"]
+        python: ["3.10", "3.13"]
         exclude:
           - os: macos-latest
-            python: "3.9"
+            python: "3.10"
           - os: windows-latest
-            python: "3.9"
+            python: "3.10"
         include:
           # The floor is tested rather than assumed: pyproject declares
-          # requires-python >= 3.9.
-          - os: ubuntu-latest
-            python: "3.10"
+          # requires-python >= 3.10. (3.9 was dropped on 2026-10-29, when
+          # ubuntu-latest became 26.04 and setup-python stopped shipping it.)
           - os: ubuntu-latest
             python: "3.11"
           - os: ubuntu-latest

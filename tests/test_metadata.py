@@ -128,7 +128,7 @@ def test_modules_reports_each_modules_own_base_url():
 def test_each_module_reports_the_page_limit_its_service_declares():
     # Not one number: discricionarias, especiais and parcerias answer 422
     # above 200 rows a page, fundoafundo and ted above 1000.
-    limits = dict(zip(tg.modules()["module"], tg.modules()["max_page_size"]))
+    limits = dict(zip(tg.modules()["module"], tg.modules()["max_page_size"], strict=True))
 
     assert limits == {
         "discricionarias": 200,

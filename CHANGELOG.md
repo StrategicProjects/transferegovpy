@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased
+
+* **Python 3.9 is no longer supported**; the floor is 3.10. CPython 3.9
+  reached end of life in October 2025, and on 2026-10-29 GitHub's
+  `ubuntu-latest` runner moved to Ubuntu 26.04, which no longer ships it, so
+  the floor could no longer be tested. `requires-python` is now `>=3.10`.
+
 ## 0.4.0
 
 * **`discricionarias` is new**: discretionary and legal transfers, the module

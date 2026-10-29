@@ -87,7 +87,7 @@ def _row_counts(frame: pd.DataFrame) -> list[int]:
     """
     from .query import count as _count
 
-    pairs = list(zip(frame["module"], frame["table"]))
+    pairs = list(zip(frame["module"], frame["table"], strict=True))
 
     try:
         from tqdm.auto import tqdm
