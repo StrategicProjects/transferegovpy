@@ -2,10 +2,10 @@ cff-version: 1.2.0
 message: "If you use this software, please cite it as below."
 title: "transferegovpy: Access the TransfereGov open data APIs from Python"
 abstract: >-
-  A Python client for the four open data APIs of TransfereGov, the Brazilian
+  A Python client for the five open data APIs of TransfereGov, the Brazilian
   federal government's platform for transfers to states, municipalities and
-  civil society: special transfers, fund-to-fund transfers, partnership
-  management and decentralized credit. Returns typed pandas DataFrames, with pagination, throttling, retries
+  civil society: discretionary and legal transfers, special transfers,
+  fund-to-fund transfers, partnership management and decentralized credit. Returns typed pandas DataFrames, with pagination, throttling, retries
   and an optional response cache.
 type: software
 version: 0.4.0
@@ -18,6 +18,18 @@ identifiers:
   - type: doi
     value: "10.5281/zenodo.21729828"
     description: The DOI of version 0.1.0.
+  - type: doi
+    value: "10.5281/zenodo.21729912"
+    description: The DOI of version 0.1.1.
+  - type: doi
+    value: "10.5281/zenodo.21790984"
+    description: The DOI of version 0.2.0.
+  - type: doi
+    value: "10.5281/zenodo.23024030"
+    description: The DOI of version 0.3.0.
+  - type: doi
+    value: "10.5281/zenodo.23773792"
+    description: The DOI of version 0.4.0.
 repository-code: "https://github.com/StrategicProjects/transferegovpy"
 url: "https://strategicprojects.github.io/transferegovpy/"
 keywords:
@@ -25,7 +37,7 @@ keywords:
   - Brazil
   - public finance
   - open data
-  - open data
+  - open government
 authors:
   - family-names: Leite
     given-names: André
